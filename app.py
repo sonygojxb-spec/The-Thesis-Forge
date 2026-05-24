@@ -4,9 +4,6 @@ import textstat
 import requests
 import json
 
-# ==========================================
-# 1. PAGE CONFIG & TARGETED CSS
-# ==========================================
 st.set_page_config(page_title="AI Academic Rewriter", layout="wide", initial_sidebar_state="collapsed")
 
 st.markdown("""
@@ -89,10 +86,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ==========================================
-# 2. APP CONFIGURATION & CREDENTIALS
-# ==========================================
-# Hardcoded API Key (Keep this script private!)
 API_KEY = "insert your api key here"
 BASE_URL = "https://api.freemodel.dev"
 
@@ -117,9 +110,6 @@ with col_controls:
 
 st.markdown("<br><br>", unsafe_allow_html=True)
 
-# ==========================================
-# 3. HELPER FUNCTIONS
-# ==========================================
 def fix_encoding_artifacts(input_string):
     replacements = {
         "â€™": "'", "â€”": "—", "â€œ": '"', "â€": '"', 
@@ -203,9 +193,6 @@ def run_ai_rewrite_stream(input_text, intensity, model):
                 except json.JSONDecodeError:
                     continue
 
-# ==========================================
-# 4. MAIN UI LAYOUT (SIDE-BY-SIDE)
-# ==========================================
 col_left, col_right = st.columns(2, gap="large")
 
 # LEFT COLUMN: INPUT
