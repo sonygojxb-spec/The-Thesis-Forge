@@ -93,7 +93,7 @@ st.markdown("""
 # 2. APP CONFIGURATION & CREDENTIALS
 # ==========================================
 # Hardcoded API Key (Keep this script private!)
-API_KEY = "fe_oa_04d4162e8c7e6e8a5584ee4491040b73f9895884e2ed85b3"
+API_KEY = "insert your api key here"
 BASE_URL = "https://api.freemodel.dev"
 
 # Header Section
