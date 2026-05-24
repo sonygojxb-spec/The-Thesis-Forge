@@ -21,7 +21,14 @@ When drafting complex academic documents, it is incredibly easy for text to soun
 To run this application locally, you will need Python installed on your machine. 
 
 **1. Install required dependencies**
+```bash
 pip install streamlit textstat requests
-
+```
 **2. API Key Configuration**
+```bash
 This app uses the freemodel.dev API. Ensure your valid API key is set within the app.py script.
+```
+**3. Usage**
+```bash
+streamlit run app.py
+```
