@@ -1,0 +1,26 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Co-writing Module: Create humanizer/cowrite.py that generates academic text around user-provided notes/ideas/bullet points. Uses a different LLM prompt that builds text FROM user's rough input while preserving their phrasing and voice.",
+  "status": "pending",
+  "steps": [
+    "Create humanizer/cowrite.py with a CoWriter class: __init__(self, model, api_key, base_url, identity=None) following the same API pattern as LLMRewriter. The class takes user inputs: intent/thesis_statement (str), target_audience (str), rough_notes (str - bullet points/ideas), key_arguments (list of str).",
+    "Implement CoWriter.generate(intent, audience, notes, arguments, stream_callback=None) that: (1) builds a system prompt instructing the LLM to generate academic text that weaves around the user's original phrasing, (2) constructs a user message with structured sections for intent, audience, notes, and arguments, (3) calls the LLM API (same streaming pattern as stage_llm_rewrite.py), (4) returns generated text",
+    "Implement CoWriter.generate_stream(intent, audience, notes, arguments) as a generator yielding chunks for streaming display in UI, following the same pattern as LLMRewriter._llm_pass_stream()",
+    "The system prompt for co-writing should: instruct the LLM to build complete academic paragraphs around the user's bullet points, preserve the user's exact phrasing where possible (weave it in), maintain academic tone matching the identity if provided, structure the output logically based on the arguments provided, use Indian English style if no identity overrides it",
+    "If identity is provided, incorporate identity.get_prompt_injection() into the co-writing system prompt to match the user's academic voice"
+  ],
+  "acceptance_criteria": [
+    "humanizer/cowrite.py exists with CoWriter class",
+    "CoWriter.generate() accepts intent, audience, notes, arguments and returns generated text via LLM call",
+    "CoWriter.generate_stream() yields chunks for streaming",
+    "Identity conditioning is applied when identity parameter is provided",
+    "Module is importable: python -c \"from humanizer.cowrite import CoWriter; print('OK')\""
+  ],
+  "verification": [
+    "Run: python -c \"from humanizer.cowrite import CoWriter; c = CoWriter(model='gpt-4o', api_key='test', base_url='https://api.freemodel.dev'); print('CoWriter instantiated OK')\"",
+    "Run: python -c \"from humanizer.cowrite import CoWriter; from humanizer.identity import AcademicIdentity; c = CoWriter(model='gpt-4o', api_key='test', base_url='https://api.freemodel.dev', identity=AcademicIdentity(role='PhD student', field='CS')); print('CoWriter with identity OK')\""
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

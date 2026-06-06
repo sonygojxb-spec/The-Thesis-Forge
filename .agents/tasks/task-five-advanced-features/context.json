@@ -1,0 +1,25 @@
+{
+  "project_type": "Python Streamlit app - AI text humanization pipeline",
+  "language": "Python 3.11",
+  "build_system": "pip with requirements.txt, no Makefile or Docker",
+  "test_framework": "None - no existing tests",
+  "build_command": "pip install -r requirements.txt",
+  "test_command": "python -c \"from humanizer import HumanizationPipeline; print('Import OK')\"",
+  "verification_instructions": "1. pip install -r requirements.txt  2. python -c to verify imports  3. streamlit run app.py --server.headless true (verify no crash on startup)",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "pip install -r requirements.txt && python -m spacy download en_core_web_sm && python -c \"import nltk; nltk.download('wordnet'); nltk.download('omw-1.4')\"",
+  "environment_constraints": "OPEN_INTERNET - full network access available. Uses freemodel.dev API (OpenAI-compatible) for LLM calls.",
+  "contribution_requirements": "Keep existing pipeline working as-is. App must remain runnable with streamlit run app.py. All additions are new modules or extensions to existing ones.",
+  "key_patterns": "Each pipeline stage is a class with __init__(aggression, seed) and process(text) method. Config is centralized in config.py. Pipeline orchestrator in pipeline.py chains stages. app.py is a single-file Streamlit app with side-by-side layout. Streaming via generator pattern (process_stream yields chunks). Progress callback pattern for UI updates.",
+  "relevant_files": [
+    "humanizer/text_analysis.py",
+    "humanizer/pipeline.py",
+    "humanizer/config.py",
+    "humanizer/stage_llm_rewrite.py",
+    "humanizer/stage_postprocess.py",
+    "humanizer/__init__.py",
+    "app.py",
+    "requirements.txt"
+  ],
+  "directory_structure": "Root: app.py (Streamlit UI), requirements.txt, README.md. humanizer/: __init__.py, config.py (all settings/constants), pipeline.py (orchestrator), text_analysis.py (metrics), stage_structural.py, stage_lexical.py, stage_llm_rewrite.py, stage_perplexity.py, stage_postprocess.py"
+}

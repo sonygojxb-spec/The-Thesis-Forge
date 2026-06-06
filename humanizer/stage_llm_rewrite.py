@@ -21,18 +21,20 @@ from humanizer.config import (
 class LLMRewriter:
     """Multi-pass LLM rewriting with streaming support."""
 
-    def __init__(self, aggression=0.5, model=None, api_key=None, base_url=None):
+    def __init__(self, aggression=0.5, model=None, api_key=None, base_url=None, identity=None):
         """
         Args:
             aggression: Float 0-1 controlling rewrite intensity.
             model: Model name to use.
             api_key: API key (defaults to config value).
             base_url: API base URL (defaults to config value).
+            identity: Optional AcademicIdentity instance for role conditioning.
         """
         self.aggression = aggression
         self.model = model or DEFAULT_MODEL
         self.api_key = api_key or API_KEY
         self.base_url = base_url or BASE_URL
+        self.identity = identity
 
     def process(self, text, stream_callback=None):
         """
@@ -185,7 +187,8 @@ class LLMRewriter:
         return (
             "You are an Indian academic researcher rewriting a draft in your natural voice. "
             "You have studied and published in India and write in Indian English academic style.\n\n"
-            "CRITICAL RULES:\n"
+            + (self.identity.get_prompt_injection() + "\n\n" if self.identity else "")
+            + "CRITICAL RULES:\n"
             "1. BRITISH ENGLISH SPELLINGS: Always use British/Indian English spellings - "
             "analyse (not analyze), organise (not organize), behaviour (not behavior), "
             "colour (not color), favour (not favor), programme (not program), "
@@ -212,10 +215,15 @@ class LLMRewriter:
 
     def _get_pass2_prompt(self):
         """System prompt for pass 2: Indian English academic voice injection."""
+        identity_context = ""
+        if self.identity:
+            identity_context = self.identity.get_prompt_injection() + "\n\n"
+
         return (
             "You are polishing an academic text to add authentic Indian English academic voice. "
             "Make subtle but effective adjustments:\n\n"
-            "1. Add hedging patterns common in Indian academic writing where appropriate: "
+            + identity_context
+            + "1. Add hedging patterns common in Indian academic writing where appropriate: "
             "'it may be observed that', 'one could argue', 'it appears reasonable to suggest', "
             "'it is pertinent to note', 'one may contend that'.\n"
             "2. Use 'shall' instead of 'will' occasionally for formal tone.\n"

@@ -37,7 +37,7 @@ class HumanizationPipeline:
     }
 
     def __init__(self, intensity=4, model=None, api_key=None, base_url=None,
-                 stage_overrides=None, progress_callback=None, seed=None):
+                 stage_overrides=None, progress_callback=None, seed=None, identity=None):
         """
         Initialize the pipeline.
 
@@ -49,6 +49,7 @@ class HumanizationPipeline:
             stage_overrides: Dict of {stage_name: bool} to enable/disable stages.
             progress_callback: Callable(stage_name, status) for UI updates.
             seed: Optional int seed for reproducible NLP stage outputs.
+            identity: Optional AcademicIdentity instance for role conditioning.
         """
         self.intensity = max(1, min(5, intensity))
         self.model = model or DEFAULT_MODEL
@@ -56,6 +57,7 @@ class HumanizationPipeline:
         self.base_url = base_url or BASE_URL
         self.progress_callback = progress_callback
         self.seed = seed
+        self.identity = identity
 
         # Get intensity profile
         profile = INTENSITY_PROFILES[self.intensity]
@@ -117,6 +119,7 @@ class HumanizationPipeline:
                 model=self.model,
                 api_key=self.api_key,
                 base_url=self.base_url,
+                identity=self.identity,
             )
             try:
                 current_text = stage.process(current_text, stream_callback=stream_callback)
@@ -200,6 +203,7 @@ class HumanizationPipeline:
                 model=self.model,
                 api_key=self.api_key,
                 base_url=self.base_url,
+                identity=self.identity,
             )
 
             try:

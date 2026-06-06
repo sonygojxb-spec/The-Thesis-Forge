@@ -186,6 +186,46 @@ TRANSITION_REPLACEMENTS = {
     "as a consequence": ["so", "therefore", "as a result", "thus"],
 }
 
+# Critic Loop settings
+CRITIC_DEFAULT_THRESHOLD = 40
+CRITIC_MAX_RETRIES = 3
+
+# Voice Analysis marker lists
+VOICE_HEDGES = [
+    "might", "perhaps", "seems to", "could", "arguably",
+    "it appears", "one might", "possibly", "may", "likely",
+    "it seems", "suggest", "to some extent",
+]
+
+VOICE_BOOSTERS = [
+    "clearly", "definitely", "certainly", "undoubtedly",
+    "obviously", "precisely", "without doubt", "evidently",
+    "unquestionably", "absolutely",
+]
+
+VOICE_ENGAGEMENT_MARKERS = [
+    "however", "on the other hand", "one might argue",
+    "conversely", "alternatively", "some scholars",
+    "it could be contended", "a counter-argument",
+    "from another perspective", "nevertheless",
+]
+
+# Academic Identity defaults
+ACADEMIC_ROLES = [
+    "PhD student", "Postdoctoral researcher", "Assistant Professor",
+    "Associate Professor", "Professor", "Research Fellow",
+    "Lecturer", "Graduate student", "Research Scholar",
+]
+
+ACADEMIC_FIELDS = [
+    "Computer Science", "Physics", "Biology", "Chemistry",
+    "Mathematics", "Psychology", "Economics", "Literature",
+    "Engineering", "Medicine", "Sociology", "Philosophy",
+    "Political Science", "Environmental Science", "Linguistics",
+]
+
+STYLE_PREFERENCES = ["formal", "semi-formal", "conversational"]
+
 # Indian English spelling preferences (American -> British)
 INDIAN_ENGLISH_PREFERENCES = {
     "utilize": "utilise",
