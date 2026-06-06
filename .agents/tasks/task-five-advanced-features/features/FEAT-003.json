@@ -2,7 +2,7 @@
   "id": "FEAT-003",
   "type": "feat",
   "description": "Complete UI Overhaul: Rebuild app.py with Streamlit tabs for Humanize mode and Co-Write mode. Add Voice Profile display (before/after), Critic Loop integration with retry visualization, Identity/Role conditioning UI section, Co-Write mode interface, and Revision Feedback Loop with editable output and style preference tracking.",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "Restructure app.py to use st.tabs(['Humanize', 'Co-Write']) at the top level to switch between modes. Keep all existing Humanize functionality intact within the first tab.",
     "Add an Identity/Role conditioning sidebar or expander section (visible in both tabs) where user specifies: Role (selectbox from ACADEMIC_ROLES), Field (selectbox from ACADEMIC_FIELDS), Institution (text_input, optional), Style preference (selectbox: formal, semi-formal, conversational). Store in session state as AcademicIdentity instance. Pass to pipeline and co-writer.",
