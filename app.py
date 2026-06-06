@@ -272,11 +272,11 @@ with col_right:
 
                     for chunk in pipeline.process_stream(input_text):
                         if chunk == "\n\n__POSTPROCESSED__\n\n":
-                            # Next chunk is the final post-processed text
+                            # Next chunk(s) are the final post-processed text
                             postprocessed_text = ""
                             continue
                         if postprocessed_text is not None:
-                            postprocessed_text = chunk
+                            postprocessed_text += chunk
                             continue
                         collected_chunks.append(chunk)
                         stream_container.markdown(''.join(collected_chunks))

@@ -48,6 +48,7 @@ class LexicalInjection:
         """
         self.aggression = aggression
         self.seed = seed
+        self.rng = random.Random(seed) if seed is not None else random.Random()
         # Common academic words that are frequently flagged
         self.target_words = {
             "utilize": ["employ", "use", "apply", "leverage"],
@@ -77,9 +78,6 @@ class LexicalInjection:
         if not text.strip():
             return text
 
-        if self.seed is not None:
-            random.seed(self.seed)
-
         # Direct replacement of known AI-favorite words
         text = self._replace_target_words(text)
 
@@ -94,12 +92,10 @@ class LexicalInjection:
         # Collect all replacements as (start, end, replacement) tuples
         replacements = []
         for word, candidates in self.target_words.items():
-            if random.random() > self.aggression:
-                continue
             pattern = re.compile(r'\b' + word + r'\b', re.IGNORECASE)
             for match in pattern.finditer(text):
-                if random.random() < self.aggression * 0.7:
-                    replacement = random.choice(candidates)
+                if self.rng.random() < self.aggression:
+                    replacement = self.rng.choice(candidates)
                     # Preserve capitalization
                     if match.group()[0].isupper():
                         replacement = replacement[0].upper() + replacement[1:]
@@ -135,7 +131,7 @@ class LexicalInjection:
                 continue
 
             # Only target words that are somewhat common
-            if freq > 5e-5 and random.random() < self.aggression * 0.3:
+            if freq > 5e-5 and self.rng.random() < self.aggression * 0.3:
                 synonym = self._get_lower_freq_synonym(clean_word)
                 if synonym and synonym.lower() != clean_word.lower():
                     # Preserve punctuation around the word
@@ -194,4 +190,4 @@ class LexicalInjection:
         candidates.sort(key=lambda x: x[1], reverse=True)
         # Pick from top candidates with some randomness
         top = candidates[:min(3, len(candidates))]
-        return random.choice(top)[0]
+        return self.rng.choice(top)[0]

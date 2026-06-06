@@ -1,0 +1,29 @@
+{
+  "id": "FEAT-003",
+  "type": "fix",
+  "description": "Fix 4 remaining issues from v2 review: global random state pollution, sentinel protocol fragility, perplexity punctuation artifacts, and compound aggression gating.",
+  "status": "in_progress",
+  "steps": [
+    "Replace global random.seed/random.X calls with self.rng instance in stage_structural.py",
+    "Replace global random.seed/random.X calls with self.rng instance in stage_lexical.py",
+    "Replace global random.seed/random.X calls with self.rng instance in stage_perplexity.py",
+    "Replace global random.seed/random.X calls with self.rng instance in stage_postprocess.py",
+    "Fix app.py sentinel handling to append chunks instead of assign",
+    "Fix perplexity _complexify_sentence to check adjacent punctuation before insertion",
+    "Simplify lexical aggression gating to remove compound probability"
+  ],
+  "acceptance_criteria": [
+    "No NLP stage modifies the global random state",
+    "Each stage uses self.rng = random.Random(seed) for all random operations",
+    "Post-sentinel chunks are appended not assigned in app.py",
+    "Perplexity complexification does not produce double commas or dash-adjacent-punctuation",
+    "Lexical replacement rate matches aggression value directly without compound gating"
+  ],
+  "verification": [
+    "python -c \"from humanizer.pipeline import HumanizationPipeline; p1 = HumanizationPipeline(intensity=4, stage_overrides={'llm_rewrite': False}, seed=42); p2 = HumanizationPipeline(intensity=4, stage_overrides={'llm_rewrite': False}, seed=42); sample='The algorithm demonstrates significant improvements in performance metrics.'; assert p1.process(sample) == p2.process(sample); print('Reproducibility OK')\"",
+    "python -c \"import random; random.seed(99); from humanizer.stage_structural import StructuralVariation; s = StructuralVariation(aggression=0.5, seed=42); s.process('Test sentence here. Another sentence to process.'); val = random.random(); random.seed(99); expected = random.random(); assert val == expected; print('No global state pollution')\"",
+    "timeout 10 streamlit run app.py --server.headless true 2>&1 | head -10"
+  ],
+  "blocked_reason": null,
+  "findings": null
+}

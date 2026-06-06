@@ -26,14 +26,12 @@ class PostProcessor:
         """
         self.aggression = aggression
         self.seed = seed
+        self.rng = random.Random(seed) if seed is not None else random.Random()
 
     def process(self, text):
         """Apply all post-processing steps."""
         if not text.strip():
             return text
-
-        if self.seed is not None:
-            random.seed(self.seed)
 
         text = self._remove_ai_transitions(text)
         text = self._fix_repeated_starters(text)
@@ -50,7 +48,7 @@ class PostProcessor:
             matches = list(pattern.finditer(text))
 
             for match in reversed(matches):  # Reverse to maintain positions
-                if random.random() > self.aggression * 0.8:
+                if self.rng.random() > self.aggression * 0.8:
                     continue
 
                 original = match.group()
@@ -58,7 +56,7 @@ class PostProcessor:
 
                 if phrase_lower in TRANSITION_REPLACEMENTS:
                     replacements = TRANSITION_REPLACEMENTS[phrase_lower]
-                    replacement = random.choice(replacements)
+                    replacement = self.rng.choice(replacements)
                 else:
                     replacement = ""
 
@@ -107,7 +105,7 @@ class PostProcessor:
             modified = list(sentences)
 
             for i in range(1, len(starters)):
-                if starters[i] == starters[i - 1] and random.random() < self.aggression:
+                if starters[i] == starters[i - 1] and self.rng.random() < self.aggression:
                     modified[i] = self._rephrase_starter(modified[i])
 
             # Also check for "The" starting too many sentences
@@ -115,7 +113,7 @@ class PostProcessor:
             if the_count > len(sentences) * 0.4:
                 for i in range(len(modified)):
                     if (starters[i] == 'the' and
-                            random.random() < self.aggression * 0.5):
+                            self.rng.random() < self.aggression * 0.5):
                         modified[i] = self._rephrase_starter(modified[i])
 
             result.append(' '.join(modified))
@@ -140,8 +138,8 @@ class PostProcessor:
             return sentence
 
         # Option 1: Add a starter phrase
-        if random.random() < 0.5:
-            prefix = random.choice(starters_to_add)
+        if self.rng.random() < 0.5:
+            prefix = self.rng.choice(starters_to_add)
             # Lowercase the first word of original
             words[0] = words[0][0].lower() + words[0][1:] if words[0][0].isupper() else words[0]
             return prefix + ' '.join(words)
@@ -162,11 +160,11 @@ class PostProcessor:
             return text
 
         # Occasionally replace semicolons with periods or dashes
-        if ';' in text and random.random() < self.aggression * 0.4:
+        if ';' in text and self.rng.random() < self.aggression * 0.4:
             semicolons = [m.start() for m in re.finditer(';', text)]
             if semicolons:
-                idx = random.choice(semicolons)
-                replacement = random.choice(['. ', ' - '])
+                idx = self.rng.choice(semicolons)
+                replacement = self.rng.choice(['. ', ' - '])
                 text = text[:idx] + replacement + text[idx + 1:]
                 # Capitalize after period
                 next_char_idx = idx + len(replacement)
@@ -187,7 +185,7 @@ class PostProcessor:
 
         for sent in sentences:
             # Occasionally add a slightly informal connector
-            if (random.random() < self.aggression * 0.1 and
+            if (self.rng.random() < self.aggression * 0.1 and
                     len(sent.split()) > 10):
                 informal_connectors = [
                     " - and this is key - ",
@@ -196,8 +194,8 @@ class PostProcessor:
                 ]
                 words = sent.split()
                 if len(words) > 6:
-                    pos = random.randint(3, min(7, len(words) - 3))
-                    connector = random.choice(informal_connectors)
+                    pos = self.rng.randint(3, min(7, len(words) - 3))
+                    connector = self.rng.choice(informal_connectors)
                     words.insert(pos, connector)
                     sent = ' '.join(words)
 

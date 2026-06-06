@@ -38,6 +38,7 @@ class PerplexityVariance:
         """
         self.aggression = aggression
         self.seed = seed
+        self.rng = random.Random(seed) if seed is not None else random.Random()
         # Parenthetical insertions for complexity
         self.parentheticals = [
             "at least in part",
@@ -64,9 +65,6 @@ class PerplexityVariance:
         """Apply perplexity variance to the input text."""
         if not text.strip():
             return text
-
-        if self.seed is not None:
-            random.seed(self.seed)
 
         paragraphs = text.split('\n\n')
         processed = []
@@ -102,7 +100,7 @@ class PerplexityVariance:
             word_count = len(words)
 
             # Randomly decide: simplify, complexify, or leave alone
-            action = random.random()
+            action = self.rng.random()
             modification_threshold = 1.0 - (self.aggression * 0.5)
 
             if action < self.aggression * 0.25 and word_count > 12:
@@ -163,22 +161,45 @@ class PerplexityVariance:
             return sentence
 
         # Insert a parenthetical phrase
-        if random.random() < 0.6:
-            insertion = random.choice(self.parentheticals)
+        if self.rng.random() < 0.6:
+            insertion = self.rng.choice(self.parentheticals)
             # Find a good insertion point (after subject, around mid-sentence)
-            insert_pos = random.randint(3, min(8, len(words) - 2))
+            insert_pos = self.rng.randint(3, min(8, len(words) - 2))
+
+            # Check if the word before insert_pos ends with punctuation
+            punctuation_chars = '.;:!?,-'
+            prev_word = words[insert_pos - 1]
+            if prev_word and prev_word[-1] in punctuation_chars:
+                # Try a different position
+                found_valid = False
+                for offset in range(1, 4):
+                    alt_pos = insert_pos + offset
+                    if alt_pos < len(words) - 1:
+                        if not words[alt_pos - 1][-1] in punctuation_chars:
+                            insert_pos = alt_pos
+                            found_valid = True
+                            break
+                if not found_valid:
+                    return sentence
 
             # Wrap in appropriate punctuation
-            if random.random() < 0.5:
+            if self.rng.random() < 0.5:
                 # Use dashes
                 words.insert(insert_pos, f"- {insertion} -")
             else:
-                # Use commas
+                # Use commas - check the word at insert_pos doesn't start with punctuation
+                if insert_pos < len(words) and words[insert_pos][0] in punctuation_chars:
+                    return sentence
                 if not words[insert_pos - 1].endswith(','):
                     words[insert_pos - 1] = words[insert_pos - 1] + ','
                 words.insert(insert_pos, f"{insertion},")
 
-            return ' '.join(words)
+            result = ' '.join(words)
+            # Post-insertion cleanup: fix double commas and dash-adjacent-to-punctuation
+            result = result.replace(',,', ',')
+            result = re.sub(r'([.;:!?])\s*-\s*', r'\1 ', result)
+            result = re.sub(r'-\s*([.;:!?,])', r' \1', result)
+            return result
 
         return sentence
 

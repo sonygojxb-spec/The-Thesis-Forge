@@ -39,14 +39,12 @@ class StructuralVariation:
         """
         self.aggression = aggression
         self.seed = seed
+        self.rng = random.Random(seed) if seed is not None else random.Random()
 
     def process(self, text):
         """Apply structural variation to the input text."""
         if not text.strip():
             return text
-
-        if self.seed is not None:
-            random.seed(self.seed)
 
         paragraphs = text.split('\n\n')
         processed_paragraphs = []
@@ -141,7 +139,7 @@ class StructuralVariation:
             if (words_current < merge_threshold and
                     i + 1 < len(sentences) and
                     len(sentences[i + 1].split()) < merge_threshold and
-                    random.random() < self.aggression * 0.6):
+                    self.rng.random() < self.aggression * 0.6):
                 # Merge with next sentence
                 next_sent = sentences[i + 1]
                 # Remove period from first, combine
@@ -163,7 +161,7 @@ class StructuralVariation:
 
         result = []
         for sent in sentences:
-            if random.random() < self.aggression * 0.3 and ',' in sent:
+            if self.rng.random() < self.aggression * 0.3 and ',' in sent:
                 reordered = self._try_reorder(sent)
                 result.append(reordered)
             else:
@@ -212,13 +210,13 @@ class StructuralVariation:
             sentences = self._split_into_sentences(para)
 
             # Split long paragraphs
-            if len(sentences) > 5 and random.random() < self.aggression * 0.4:
+            if len(sentences) > 5 and self.rng.random() < self.aggression * 0.4:
                 mid = len(sentences) // 2
                 result.append(' '.join(sentences[:mid]))
                 result.append(' '.join(sentences[mid:]))
             # Merge short paragraphs
             elif (len(sentences) <= 2 and i + 1 < len(paragraphs) and
-                  random.random() < self.aggression * 0.3):
+                  self.rng.random() < self.aggression * 0.3):
                 next_para = paragraphs[i + 1]
                 result.append(f"{para} {next_para}")
                 i += 1
