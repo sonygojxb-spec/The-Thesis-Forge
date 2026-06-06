@@ -1,0 +1,37 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Build the multi-stage humanization pipeline engine as a modular Python package (humanizer/) with all NLP processing stages, then rebuild app.py as the Streamlit frontend that uses this pipeline.",
+  "status": "in_progress",
+  "steps": [
+    "Create humanizer/ package directory with __init__.py",
+    "Create humanizer/config.py - centralized configuration (API key, base URL, model options, pipeline stage settings). API_KEY default: 'insert your api key here', BASE_URL: 'https://api.freemodel.dev'",
+    "Create humanizer/text_analysis.py - text analysis utilities: sentence splitting, readability scoring, perplexity estimation, token probability heuristics (using word frequency data). Include function to compute 'AI score indicators' like sentence length variance, vocabulary richness (type-token ratio), and transition word density.",
+    "Create humanizer/stage_structural.py - Stage 1: Structural Variation. Takes input text and applies: (a) sentence splitting (break long compound sentences), (b) sentence merging (combine short adjacent sentences occasionally), (c) clause reordering within sentences, (d) paragraph restructuring (vary paragraph lengths). Use spaCy for dependency parsing to safely restructure. This stage operates deterministically (no LLM calls).",
+    "Create humanizer/stage_lexical.py - Stage 2: Controlled Vocabulary Injection. Replace high-frequency/high-probability words with less predictable synonyms using WordNet. Target: adverbs, adjectives, and common academic verbs (e.g., 'utilize'->'employ', 'demonstrate'->'show'). Preserve domain-specific terminology by checking against a protected terms list. Use word frequency corpus (via wordfreq library) to prefer lower-frequency replacements.",
+    "Create humanizer/stage_llm_rewrite.py - Stage 3: Multi-pass LLM Rewriting. First pass: rewrite focusing on natural sentence rhythm and removing AI patterns. Second pass: inject personal academic voice (hedging language, occasional first-person where appropriate, discipline-specific phrasing). Each pass uses different temperature and system prompts. Use streaming API calls to freemodel.dev (OpenAI-compatible format). Include the intensity-based prompt system from original app but significantly enhanced.",
+    "Create humanizer/stage_perplexity.py - Stage 4: Perplexity Variance Injection. Post-LLM processing that deliberately varies sentence complexity. Some sentences get simplified (shorter, common words), others get made more complex (longer, with embedded clauses). Goal: mimic the natural variance in human writing where some ideas are stated simply and others elaborated. Use NLP techniques (not LLM) - sentence-level transformations.",
+    "Create humanizer/stage_postprocess.py - Stage 5: Final NLP Post-processing. Apply finishing touches: (a) remove any remaining AI fingerprint patterns (repeated sentence starters, uniform punctuation patterns), (b) inject natural imperfections (occasional longer paragraphs, varied comma usage), (c) ensure no 'AI transition words' remain (Moreover, Furthermore, Additionally, etc. - replace with natural alternatives or restructure), (d) final readability check and adjustment.",
+    "Create humanizer/pipeline.py - Pipeline orchestrator that chains all stages together. Accepts input text + configuration (intensity level 1-5, which stages to enable/disable) and returns processed text. Each intensity level determines which stages run and how aggressively they transform. Level 1: only structural + light lexical. Level 5: all stages at maximum. Include progress callback for UI updates.",
+    "Rebuild app.py as the Streamlit frontend. Keep the polished dark-mode UI styling (green accent theme). Layout: left column for input, right column for output. Add: (a) model selector (keep existing models), (b) intensity slider 1-5, (c) stage toggles (advanced settings expander) letting users enable/disable individual pipeline stages, (d) progress indicators showing which stage is currently running, (e) before/after analytics comparison (sentence count, avg length, grade level, vocabulary diversity score, estimated AI detection risk score), (f) download button for final output. Preserve the streaming display for the LLM rewrite stage.",
+    "Update requirements.txt with all new dependencies: streamlit>=1.35.0, spacy>=3.7.0, nltk>=3.8.0, wordfreq>=3.0.0, textstat>=0.7.3, requests>=2.31.0. Add a note about downloading spacy model (python -m spacy download en_core_web_sm) and nltk data.",
+    "Update README.md to document the new multi-stage architecture, installation steps (including spacy model download and nltk data), usage instructions, and explanation of each pipeline stage."
+  ],
+  "acceptance_criteria": [
+    "humanizer/ package exists with all stage modules importable without errors",
+    "Pipeline can be instantiated and called with sample text without crashing",
+    "app.py launches successfully with streamlit run app.py --server.headless true",
+    "All pipeline stages are individually toggleable from the UI",
+    "The LLM rewrite stage correctly calls the freemodel.dev API with streaming",
+    "requirements.txt includes all necessary dependencies",
+    "README.md documents the new architecture and setup steps"
+  ],
+  "verification": [
+    "Run: pip install -r requirements.txt && python -m spacy download en_core_web_sm",
+    "Run: python -c \"from humanizer.pipeline import HumanizationPipeline; print('Pipeline import OK')\"",
+    "Run: python -c \"from humanizer.stage_structural import StructuralVariation; from humanizer.stage_lexical import LexicalInjection; from humanizer.stage_perplexity import PerplexityVariance; from humanizer.stage_postprocess import PostProcessor; print('All stages import OK')\"",
+    "Run: timeout 10 streamlit run app.py --server.headless true 2>&1 | head -20 (verify no import errors on startup)"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
