@@ -71,6 +71,33 @@ class LexicalInjection:
             "crucial": ["key", "vital", "critical", "important"],
             "inherent": ["built-in", "intrinsic", "natural", "innate"],
             "optimal": ["best", "ideal", "most effective", "top"],
+            "achieve": ["attain", "reach", "accomplish", "secure"],
+            "approach": ["method", "technique", "way", "strategy"],
+            "impact": ["effect", "influence", "bearing", "consequence"],
+            "framework": ["structure", "model", "scheme", "arrangement"],
+            "landscape": ["field", "domain", "area", "sphere"],
+            "paradigm": ["model", "framework", "pattern", "standard"],
+            "robust": ["strong", "solid", "sturdy", "resilient"],
+            "leveraging": ["using", "employing", "drawing on", "making use of"],
+            "innovative": ["novel", "original", "fresh", "inventive"],
+            "streamline": ["simplify", "improve", "refine", "tighten"],
+            "pivotal": ["key", "central", "important", "decisive"],
+            "foster": ["encourage", "promote", "cultivate", "nurture"],
+            "underscore": ["highlight", "stress", "emphasize", "point up"],
+            "delve": ["examine", "explore", "look into", "investigate"],
+            "realm": ["area", "field", "domain", "sphere"],
+            "plethora": ["many", "abundance", "wealth", "range"],
+            "myriad": ["many", "numerous", "a range of", "countless"],
+            "catalyst": ["trigger", "driver", "stimulus", "spark"],
+            "holistic": ["comprehensive", "complete", "all-round", "integrated"],
+            "synergy": ["cooperation", "collaboration", "combined effect", "partnership"],
+            "ecosystem": ["environment", "system", "network", "setting"],
+            "transformative": ["significant", "major", "far-reaching", "game-changing"],
+            "spearhead": ["lead", "drive", "champion", "head"],
+            "groundbreaking": ["pioneering", "original", "innovative", "path-breaking"],
+            "cutting-edge": ["advanced", "latest", "modern", "state-of-the-art"],
+            "moreover": ["also", "and", "besides", "in addition"],
+            "furthermore": ["also", "and", "what is more", "besides"],
         }
 
     def process(self, text):
@@ -84,6 +111,9 @@ class LexicalInjection:
         # WordNet-based synonym replacement for adjectives/adverbs
         if HAS_WORDNET and HAS_WORDFREQ:
             text = self._wordnet_replace(text)
+
+        # Convert American spellings to British/Indian English
+        text = self._apply_british_spellings(text)
 
         return text
 
@@ -112,7 +142,7 @@ class LexicalInjection:
         """Replace high-frequency adjectives/adverbs with lower-frequency synonyms."""
         words = text.split()
         replacement_count = 0
-        max_replacements = int(len(words) * self.aggression * 0.08)
+        max_replacements = int(len(words) * self.aggression * 0.15)
 
         result_words = []
         for word in words:
@@ -131,7 +161,7 @@ class LexicalInjection:
                 continue
 
             # Only target words that are somewhat common
-            if freq > 5e-5 and self.rng.random() < self.aggression * 0.3:
+            if freq > 5e-5 and self.rng.random() < self.aggression * 0.5:
                 synonym = self._get_lower_freq_synonym(clean_word)
                 if synonym and synonym.lower() != clean_word.lower():
                     # Preserve punctuation around the word
@@ -191,3 +221,72 @@ class LexicalInjection:
         # Pick from top candidates with some randomness
         top = candidates[:min(3, len(candidates))]
         return self.rng.choice(top)[0]
+
+    def _apply_british_spellings(self, text):
+        """Convert American English spellings to British/Indian English equivalents."""
+        # Specific word replacements
+        specific_replacements = {
+            "color": "colour", "Color": "Colour",
+            "behavior": "behaviour", "Behavior": "Behaviour",
+            "favor": "favour", "Favor": "Favour",
+            "honor": "honour", "Honor": "Honour",
+            "labor": "labour", "Labor": "Labour",
+            "neighbor": "neighbour", "Neighbor": "Neighbour",
+            "center": "centre", "Center": "Centre",
+            "fiber": "fibre", "Fiber": "Fibre",
+            "meter": "metre", "Meter": "Metre",
+            "defense": "defence", "Defense": "Defence",
+            "license": "licence", "License": "Licence",
+            "offense": "offence", "Offense": "Offence",
+        }
+
+        for american, british in specific_replacements.items():
+            pattern = re.compile(r'\b' + re.escape(american) + r'\b')
+            text = pattern.sub(british, text)
+
+        # Pattern-based replacements: -ization -> -isation
+        text = re.sub(r'\b(\w+)ization\b', r'\1isation', text)
+        text = re.sub(r'\b(\w+)izations\b', r'\1isations', text)
+
+        # Handle -yze -> -yse (analyze -> analyse, paralyze -> paralyse)
+        text = re.sub(r'\b(\w+)yze\b', r'\1yse', text)
+        text = re.sub(r'\b(\w+)yzed\b', r'\1ysed', text)
+        text = re.sub(r'\b(\w+)yzes\b', r'\1yses', text)
+        text = re.sub(r'\b(\w+)yzing\b', r'\1ysing', text)
+
+        # Handle -ize -> -ise (but not words like 'size', 'prize', 'seize')
+        exceptions = {'size', 'sized', 'sizes', 'sizing',
+                      'prize', 'prized', 'prizes', 'prizing',
+                      'seize', 'seized', 'seizes', 'seizing',
+                      'capsize', 'capsized', 'capsizes', 'capsizing'}
+
+        def ize_replacer(match):
+            word = match.group(0)
+            if word.lower() in exceptions:
+                return word
+            return word[:-3] + 'ise'
+
+        def ized_replacer(match):
+            word = match.group(0)
+            if word.lower() in exceptions:
+                return word
+            return word[:-4] + 'ised'
+
+        def izes_replacer(match):
+            word = match.group(0)
+            if word.lower() in exceptions:
+                return word
+            return word[:-4] + 'ises'
+
+        def izing_replacer(match):
+            word = match.group(0)
+            if word.lower() in exceptions:
+                return word
+            return word[:-5] + 'ising'
+
+        text = re.sub(r'\b\w+ize\b', ize_replacer, text)
+        text = re.sub(r'\b\w+ized\b', ized_replacer, text)
+        text = re.sub(r'\b\w+izes\b', izes_replacer, text)
+        text = re.sub(r'\b\w+izing\b', izing_replacer, text)
+
+        return text

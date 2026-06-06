@@ -163,18 +163,18 @@ class LLMRewriter:
             yield pass1_result
 
     def _get_pass1_prompt(self):
-        """System prompt for pass 1: rhythm and natural variation."""
+        """System prompt for pass 1: Indian English academic style with natural variation."""
         intensity_detail = ""
         if self.aggression >= 0.7:
             intensity_detail = (
-                "Be bold in varying sentence structure. Vary sentence length dramatically. "
-                "Some sentences should be 5-8 words. Others 30+. "
-                "Use unusual but accurate word choices. "
+                "Be bold in varying sentence structure. Some sentences must be just 5-8 words. "
+                "Others should stretch beyond 35 words with subordinate clauses. "
+                "Use unexpected but precise vocabulary choices. Break patterns aggressively. "
             )
         elif self.aggression >= 0.4:
             intensity_detail = (
                 "Moderately vary sentence structures. Mix short and long sentences. "
-                "Replace overly generic phrasing with more natural alternatives. "
+                "Replace overly generic phrasing with more natural Indian English alternatives. "
             )
         else:
             intensity_detail = (
@@ -183,45 +183,63 @@ class LLMRewriter:
             )
 
         return (
-            "You are an experienced academic researcher improving a draft for naturalness and readability. "
-            "Your goal is to make this text read as though a skilled human author wrote it in one fluid session.\n\n"
+            "You are an Indian academic researcher rewriting a draft in your natural voice. "
+            "You have studied and published in India and write in Indian English academic style.\n\n"
             "CRITICAL RULES:\n"
-            "1. BURSTINESS: Vary sentence lengths dramatically. Mix very short sentences (5-10 words) "
-            "with complex ones (25-40 words). Real humans do not write uniformly.\n"
-            "2. VOCABULARY: Avoid the most predictable or generic word choices. Use slightly unexpected but "
-            "accurate vocabulary. Avoid overused transitions like: Moreover, Furthermore, Additionally, "
-            "Consequently, Nevertheless, It is worth noting, Crucially, Delving into, Multifaceted, Tapestry.\n"
-            "3. NATURAL FLOW: Write like a real researcher drafting - sometimes starting sentences "
-            "with 'And' or 'But', occasionally using parenthetical asides, varying paragraph lengths.\n"
-            "4. PRESERVE: Keep all scientific facts, data, terminology, and core meaning intact.\n"
-            "5. OUTPUT: Only the rewritten text. No preambles, no explanations, no quotes.\n\n"
+            "1. BRITISH ENGLISH SPELLINGS: Always use British/Indian English spellings - "
+            "analyse (not analyze), organise (not organize), behaviour (not behavior), "
+            "colour (not color), favour (not favor), programme (not program), "
+            "centre (not center), defence (not defense), utilise (not utilize).\n"
+            "2. BURSTINESS: Vary sentence lengths dramatically. Some sentences should be very short "
+            "(5-10 words). Others should be long and complex (30-40 words) with multiple clauses. "
+            "Real humans do not write uniformly.\n"
+            "3. INDIAN ENGLISH CONSTRUCTIONS: Use constructions natural to Indian academic English - "
+            "use 'one' instead of 'you' for impersonal statements, use characteristic passive voice "
+            "constructions ('it was observed that', 'it has been found'), place qualifiers and "
+            "adverbial phrases at sentence beginnings.\n"
+            "4. VOCABULARY: Avoid ALL typical GPT/AI transition words entirely. Never use: Moreover, "
+            "Furthermore, Additionally, Consequently, Nevertheless, It is worth noting, Crucially, "
+            "Delving into, Multifaceted, Tapestry, Leveraging, Spearheading, Groundbreaking, "
+            "Cutting-edge, Paradigm shift, Synergy, Ecosystem, Seamless, Transformative, "
+            "Instrumental, Holistic, Nuanced, Comprehensive understanding.\n"
+            "5. NATURAL FLOW: Write like a real Indian researcher drafting - sometimes starting "
+            "sentences with 'And' or 'But', using parenthetical asides, varying paragraph lengths. "
+            "Occasionally use discourse markers like 'as such', 'in this regard', 'broadly speaking'.\n"
+            "6. PRESERVE: Keep all scientific facts, data, terminology, and core meaning intact.\n"
+            "7. OUTPUT: Only the rewritten text. No preambles, no explanations, no quotes.\n\n"
             f"{intensity_detail}"
         )
 
     def _get_pass2_prompt(self):
-        """System prompt for pass 2: academic voice injection."""
+        """System prompt for pass 2: Indian English academic voice injection."""
         return (
-            "You are polishing an academic text to add authentic human voice. "
-            "Make subtle adjustments:\n\n"
-            "1. Add occasional hedging language where appropriate (seems to, appears to, "
-            "might suggest, could indicate).\n"
-            "2. Where relevant, add brief first-person observations (We observed, Our analysis, "
-            "In our view).\n"
-            "3. Vary formality slightly - some sentences can be slightly less formal than others.\n"
-            "4. Ensure transitions between ideas feel natural, not formulaic.\n"
-            "5. Keep the text academically rigorous but make it sound like a real person wrote it.\n"
-            "6. Do NOT add any new information or change scientific facts.\n"
-            "7. Output ONLY the polished text. No explanations.\n"
+            "You are polishing an academic text to add authentic Indian English academic voice. "
+            "Make subtle but effective adjustments:\n\n"
+            "1. Add hedging patterns common in Indian academic writing where appropriate: "
+            "'it may be observed that', 'one could argue', 'it appears reasonable to suggest', "
+            "'it is pertinent to note', 'one may contend that'.\n"
+            "2. Use 'shall' instead of 'will' occasionally for formal tone.\n"
+            "3. Use characteristic Indian English constructions: 'the same is true for', "
+            "'keeping in view', 'with respect to the above', 'in this regard', 'as such'.\n"
+            "4. Where relevant, add brief observations (We observed, Our analysis suggests, "
+            "In our view, It was noted that).\n"
+            "5. Vary formality slightly - some sentences can be slightly less formal than others.\n"
+            "6. Ensure transitions between ideas feel natural, not formulaic. Never use AI-typical "
+            "transitions (Moreover, Furthermore, Additionally, Consequently).\n"
+            "7. Keep British English spellings throughout (analyse, organise, behaviour, colour).\n"
+            "8. Keep the text academically rigorous but make it sound like a real Indian researcher wrote it.\n"
+            "9. Do NOT add any new information or change scientific facts.\n"
+            "10. Output ONLY the polished text. No explanations.\n"
         )
 
     def _get_pass1_temperature(self):
         """Calculate temperature for pass 1."""
-        return min(1.2, LLM_PASS1_TEMPERATURE_BASE +
+        return min(1.4, LLM_PASS1_TEMPERATURE_BASE +
                    self.aggression * LLM_TEMPERATURE_INTENSITY_FACTOR)
 
     def _get_pass2_temperature(self):
         """Calculate temperature for pass 2."""
-        return min(1.2, LLM_PASS2_TEMPERATURE_BASE +
+        return min(1.4, LLM_PASS2_TEMPERATURE_BASE +
                    self.aggression * LLM_TEMPERATURE_INTENSITY_FACTOR)
 
     def _llm_pass(self, text, system_prompt, temperature, stream_callback=None):
@@ -246,7 +264,7 @@ class LLMRewriter:
             "model": self.model,
             "messages": [
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": f"Please improve the writing style of this academic text:\n\n{text}"}
+                {"role": "user", "content": f"Rewrite this academic text in natural Indian English academic style, varying sentence lengths dramatically and avoiding any AI-typical phrasing:\n\n{text}"}
             ],
             "temperature": temperature,
             "stream": True

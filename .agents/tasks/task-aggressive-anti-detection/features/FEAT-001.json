@@ -1,0 +1,42 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Overhaul config.py, stage_llm_rewrite.py, and stage_lexical.py to dramatically improve anti-detection: Indian English academic voice in LLM prompts, expanded AI transition word lists, larger target vocabulary, higher temperature settings, and more aggressive replacement thresholds.",
+  "status": "in_progress",
+  "steps": [
+    "1. In humanizer/config.py: Increase LLM_PASS1_TEMPERATURE_BASE from 0.5 to 0.8 and LLM_PASS2_TEMPERATURE_BASE from 0.7 to 0.9. Increase LLM_TEMPERATURE_INTENSITY_FACTOR from 0.1 to 0.15.",
+    "2. In humanizer/config.py: Expand AI_TRANSITION_WORDS list to at least 60 entries. Add common AI phrases like: 'in conclusion', 'it is evident that', 'plays a crucial role', 'it is essential to', 'a myriad of', 'in today\\'s world', 'serves as a', 'it is noteworthy', 'a comprehensive understanding', 'the overarching', 'holistic approach', 'a nuanced understanding', 'leveraging', 'spearheading', 'at the forefront', 'groundbreaking', 'cutting-edge', 'paradigm shift', 'synergy', 'ecosystem', 'robust framework', 'seamless integration', 'transformative', 'instrumental in', 'underpinning', 'fostering', 'bolstering', 'catalyzing'.",
+    "3. In humanizer/config.py: Expand TRANSITION_REPLACEMENTS to cover all new entries with 3-4 natural alternatives each. Use Indian English style replacements where possible (e.g., 'it is evident that' -> ['clearly', 'one can see that', 'it appears', '']).",
+    "4. In humanizer/config.py: Add a new dictionary INDIAN_ENGLISH_PREFERENCES with British English spelling preferences and characteristic Indian academic phrases. Include entries like: 'utilize' -> 'utilise', 'organize' -> 'organise', common discourse markers like 'as such', 'in this regard', 'to that end', 'one may note that', 'it is pertinent to mention'.",
+    "5. In humanizer/config.py: Add a new list INDIAN_DISCOURSE_MARKERS with phrases typical of Indian English academic writing: ['as such', 'in this regard', 'to that end', 'one may note that', 'it is pertinent to mention', 'needless to say', 'it goes without saying', 'by and large', 'on the whole', 'for the most part', 'to a large extent', 'in the Indian context', 'broadly speaking'].",
+    "6. In humanizer/stage_llm_rewrite.py: Completely rewrite _get_pass1_prompt() to instruct the LLM to write in Indian English academic style. The prompt should specify: use British English spellings (analyse, organise, behaviour, colour, favour, programme), use Indian English sentence constructions (placing qualifiers differently, using 'one' instead of 'you', characteristic passive constructions), vary sentence length dramatically (5-word sentences mixed with 35+ word sentences), avoid ALL typical GPT transition words, and write as if the author is an Indian academic researcher writing in their natural style.",
+    "7. In humanizer/stage_llm_rewrite.py: Rewrite _get_pass2_prompt() to reinforce Indian English academic voice. Add instructions for: hedging patterns common in Indian academic writing ('it may be observed that', 'one could argue', 'it appears reasonable to suggest'), use of 'shall' instead of 'will' occasionally, characteristic Indian English constructions ('the same is true for', 'keeping in view', 'with respect to the above').",
+    "8. In humanizer/stage_llm_rewrite.py: Change the user message in _llm_pass_stream() from 'Please improve the writing style of this academic text:' to 'Rewrite this academic text in natural Indian English academic style, varying sentence lengths dramatically and avoiding any AI-typical phrasing:'",
+    "9. In humanizer/stage_llm_rewrite.py: Increase the max temperature cap from 1.2 to 1.4 in both _get_pass1_temperature() and _get_pass2_temperature().",
+    "10. In humanizer/stage_lexical.py: Expand self.target_words dictionary from 20 entries to at least 45 entries. Add more verbs and nouns that AI typically overuses: 'achieve' -> ['attain', 'reach', 'accomplish', 'secure'], 'approach' -> ['method', 'technique', 'way', 'strategy'], 'impact' -> ['effect', 'influence', 'bearing', 'consequence'], 'framework' -> ['structure', 'model', 'scheme', 'arrangement'], 'landscape' -> ['field', 'domain', 'area', 'sphere'], 'paradigm' -> ['model', 'framework', 'pattern', 'standard'], 'robust' -> ['strong', 'solid', 'sturdy', 'resilient'], 'leveraging' -> ['using', 'employing', 'drawing on', 'making use of'], 'innovative' -> ['novel', 'original', 'fresh', 'inventive'], 'streamline' -> ['simplify', 'improve', 'refine', 'tighten'], 'pivotal' -> ['key', 'central', 'important', 'decisive'], 'foster' -> ['encourage', 'promote', 'cultivate', 'nurture'], 'underscore' -> ['highlight', 'stress', 'emphasize', 'point up'], 'delve' -> ['examine', 'explore', 'look into', 'investigate'], 'realm' -> ['area', 'field', 'domain', 'sphere'], 'plethora' -> ['many', 'abundance', 'wealth', 'range'], 'myriad' -> ['many', 'numerous', 'a range of', 'countless'], 'catalyst' -> ['trigger', 'driver', 'stimulus', 'spark'], 'holistic' -> ['comprehensive', 'complete', 'all-round', 'integrated'], 'synergy' -> ['cooperation', 'collaboration', 'combined effect', 'partnership'], 'ecosystem' -> ['environment', 'system', 'network', 'setting'], 'transformative' -> ['significant', 'major', 'far-reaching', 'game-changing'], 'spearhead' -> ['lead', 'drive', 'champion', 'head'], 'groundbreaking' -> ['pioneering', 'original', 'innovative', 'path-breaking'], 'cutting-edge' -> ['advanced', 'latest', 'modern', 'state-of-the-art'].",
+    "11. In humanizer/stage_lexical.py: Change the WordNet replacement threshold from (aggression * 0.3) to (aggression * 0.5) on line where it checks `if freq > 5e-5 and self.rng.random() < self.aggression * 0.3`. Also increase max_replacements from `int(len(words) * self.aggression * 0.08)` to `int(len(words) * self.aggression * 0.15)` to allow replacing up to 15% of words at max intensity.",
+    "12. In humanizer/stage_lexical.py: Add a new method _apply_british_spellings(self, text) that converts American spellings to British: -ize -> -ise, -ization -> -isation, -or -> -our (for color/colour, behavior/behaviour, favor/favour, honor/honour, labor/labour), -er -> -re (center/centre), -ense -> -ence (defense/defence, license/licence). Call this method at the end of process() method."
+  ],
+  "acceptance_criteria": [
+    "config.py has LLM_PASS1_TEMPERATURE_BASE=0.8, LLM_PASS2_TEMPERATURE_BASE=0.9, LLM_TEMPERATURE_INTENSITY_FACTOR=0.15",
+    "AI_TRANSITION_WORDS list has at least 60 entries",
+    "TRANSITION_REPLACEMENTS covers all new transition words",
+    "INDIAN_ENGLISH_PREFERENCES and INDIAN_DISCOURSE_MARKERS exist in config.py",
+    "stage_llm_rewrite.py pass1 prompt explicitly instructs Indian English academic style with British spellings",
+    "stage_llm_rewrite.py pass2 prompt uses Indian English hedging patterns",
+    "Temperature cap is 1.4 instead of 1.2",
+    "stage_lexical.py has at least 45 target word entries",
+    "WordNet replacement threshold is aggression * 0.5",
+    "Max replacements cap is aggression * 0.15",
+    "British spelling conversion method exists and is called in process()",
+    "All modules import without errors: python -c 'from humanizer.config import *; from humanizer.stage_llm_rewrite import LLMRewriter; from humanizer.stage_lexical import LexicalInjection'"
+  ],
+  "verification": [
+    "python -c \"from humanizer.config import AI_TRANSITION_WORDS, INDIAN_ENGLISH_PREFERENCES, INDIAN_DISCOURSE_MARKERS, LLM_PASS1_TEMPERATURE_BASE; assert len(AI_TRANSITION_WORDS) >= 60; assert LLM_PASS1_TEMPERATURE_BASE == 0.8; print('Config OK')\"",
+    "python -c \"from humanizer.stage_lexical import LexicalInjection; s = LexicalInjection(aggression=0.9); result = s.process('The organization will utilize a comprehensive framework to implement transformative changes.'); print(result); assert 'organize' not in result.lower() or 'organis' in result.lower() or 'utilis' in result.lower() or 'employ' in result.lower(); print('Lexical OK')\"",
+    "python -c \"from humanizer.stage_llm_rewrite import LLMRewriter; r = LLMRewriter(aggression=0.9); p = r._get_pass1_prompt(); assert 'Indian' in p or 'indian' in p or 'British' in p; print('LLM prompts OK')\"",
+    "python -c \"from humanizer.pipeline import HumanizationPipeline; p = HumanizationPipeline(intensity=5); print('Pipeline OK')\""
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
