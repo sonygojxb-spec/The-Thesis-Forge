@@ -259,8 +259,26 @@ def detect_style_preferences(original, edited):
     # Vocabulary notes (detect if user consistently changes specific words)
     orig_words = set(original.lower().split())
     edit_words = set(edited.lower().split())
-    new_words = edit_words - orig_words
-    removed_words = orig_words - edit_words
+    # Filter out common function words (stopwords) that dominate set differences
+    # during structural edits and do not represent vocabulary preferences
+    function_words = {
+        "a", "an", "the", "is", "are", "was", "were", "be", "been", "being",
+        "have", "has", "had", "do", "does", "did", "will", "would", "shall",
+        "should", "may", "might", "can", "could", "must", "ought",
+        "i", "me", "my", "mine", "we", "us", "our", "ours",
+        "you", "your", "yours", "he", "him", "his", "she", "her", "hers",
+        "it", "its", "they", "them", "their", "theirs",
+        "this", "that", "these", "those", "who", "whom", "which", "what",
+        "and", "but", "or", "nor", "for", "yet", "so",
+        "in", "on", "at", "to", "from", "by", "with", "of", "about",
+        "into", "through", "during", "before", "after", "above", "below",
+        "between", "under", "over", "up", "down", "out", "off", "then",
+        "than", "if", "as", "not", "no", "all", "each", "every",
+        "both", "few", "more", "most", "other", "some", "such",
+        "only", "own", "same", "too", "very", "just",
+    }
+    new_words = edit_words - orig_words - function_words
+    removed_words = orig_words - edit_words - function_words
 
     notes = []
     if len(new_words) > 5:
@@ -505,6 +523,7 @@ with tab_humanize:
                             base_url=BASE_URL,
                             stage_overrides=stage_overrides,
                             identity=identity,
+                            style_instructions=style_instructions,
                         )
 
                     critic = CriticLoop(
@@ -572,6 +591,7 @@ with tab_humanize:
                         stage_overrides=stage_overrides,
                         progress_callback=update_progress,
                         identity=identity,
+                        style_instructions=style_instructions,
                     )
 
                     stream_container = st.empty()
@@ -727,6 +747,7 @@ with tab_cowrite:
                 api_key=API_KEY,
                 base_url=BASE_URL,
                 identity=identity,
+                style_instructions=style_instructions,
             )
 
             stream_container = st.empty()
@@ -747,7 +768,10 @@ with tab_cowrite:
 
             except Exception as e:
                 st.error(f"An error occurred during generation: {str(e)}")
-                final_cowrite = ""
+                final_cowrite = ''.join(collected_chunks)
+                if final_cowrite:
+                    st.session_state.cowrite_output = final_cowrite
+                    st.warning("Partial output preserved from before the error.")
 
             if final_cowrite:
                 # Show analytics

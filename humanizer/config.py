@@ -204,10 +204,10 @@ VOICE_BOOSTERS = [
 ]
 
 VOICE_ENGAGEMENT_MARKERS = [
-    "however", "on the other hand", "one might argue",
-    "conversely", "alternatively", "some scholars",
+    "one might argue",
+    "alternatively", "some scholars",
     "it could be contended", "a counter-argument",
-    "from another perspective", "nevertheless",
+    "from another perspective",
 ]
 
 # Academic Identity defaults

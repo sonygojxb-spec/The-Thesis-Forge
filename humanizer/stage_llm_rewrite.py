@@ -21,7 +21,8 @@ from humanizer.config import (
 class LLMRewriter:
     """Multi-pass LLM rewriting with streaming support."""
 
-    def __init__(self, aggression=0.5, model=None, api_key=None, base_url=None, identity=None):
+    def __init__(self, aggression=0.5, model=None, api_key=None, base_url=None, identity=None,
+                 style_instructions=None):
         """
         Args:
             aggression: Float 0-1 controlling rewrite intensity.
@@ -29,12 +30,14 @@ class LLMRewriter:
             api_key: API key (defaults to config value).
             base_url: API base URL (defaults to config value).
             identity: Optional AcademicIdentity instance for role conditioning.
+            style_instructions: Optional string with style preferences to append to prompts.
         """
         self.aggression = aggression
         self.model = model or DEFAULT_MODEL
         self.api_key = api_key or API_KEY
         self.base_url = base_url or BASE_URL
         self.identity = identity
+        self.style_instructions = style_instructions or ""
 
     def process(self, text, stream_callback=None):
         """
@@ -211,6 +214,7 @@ class LLMRewriter:
             "6. PRESERVE: Keep all scientific facts, data, terminology, and core meaning intact.\n"
             "7. OUTPUT: Only the rewritten text. No preambles, no explanations, no quotes.\n\n"
             f"{intensity_detail}"
+            + (f"\n\n{self.style_instructions}" if self.style_instructions else "")
         )
 
     def _get_pass2_prompt(self):
@@ -238,6 +242,7 @@ class LLMRewriter:
             "8. Keep the text academically rigorous but make it sound like a real Indian researcher wrote it.\n"
             "9. Do NOT add any new information or change scientific facts.\n"
             "10. Output ONLY the polished text. No explanations.\n"
+            + (f"\n{self.style_instructions}" if self.style_instructions else "")
         )
 
     def _get_pass1_temperature(self):

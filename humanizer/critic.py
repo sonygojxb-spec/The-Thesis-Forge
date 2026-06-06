@@ -35,13 +35,17 @@ class CriticLoop:
         """
         Run the pipeline with critic evaluation and retry logic.
 
+        Each retry refines the previous best attempt (iterative improvement)
+        rather than re-processing the original input. The attempt with the
+        lowest risk score is tracked and returned as final_text.
+
         Args:
             text: Input text to humanize.
             initial_intensity: Starting intensity level (1-5).
 
         Returns:
             dict with keys:
-                - final_text: The best output text produced.
+                - final_text: The best (lowest-risk) output text produced.
                 - attempts: List of dicts, each with text, risk_score,
                   voice_profile, and intensity_used.
                 - success: Boolean indicating if risk was brought below threshold.
@@ -49,14 +53,18 @@ class CriticLoop:
         attempts = []
         current_intensity = initial_intensity
         best_text = text
+        best_risk = float('inf')
+        # On the first attempt, process the original input;
+        # subsequent attempts refine the lowest-risk output so far.
+        current_input = text
 
         for attempt_num in range(self.max_retries + 1):
             # Cap intensity at 5
             capped_intensity = min(5, current_intensity)
 
-            # Create and run the pipeline
+            # Create and run the pipeline on the current input
             pipeline = self.pipeline_factory(capped_intensity)
-            result_text = pipeline.process(text)
+            result_text = pipeline.process(current_input)
 
             # Evaluate the output
             risk_score = compute_ai_risk_score(result_text)
@@ -69,7 +77,10 @@ class CriticLoop:
                 "intensity_used": capped_intensity,
             })
 
-            best_text = result_text
+            # Track the lowest-risk attempt as best
+            if risk_score < best_risk:
+                best_risk = risk_score
+                best_text = result_text
 
             # Check if risk is acceptable
             if risk_score <= self.risk_threshold:
@@ -79,9 +90,11 @@ class CriticLoop:
                     "success": True,
                 }
 
-            # If we have retries left, increase intensity
+            # If we have retries left, increase intensity and refine
+            # the best output so far
             if attempt_num < self.max_retries:
                 current_intensity += 1
+                current_input = best_text
 
         # Exhausted retries without meeting threshold
         return {

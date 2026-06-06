@@ -15,18 +15,21 @@ from humanizer.config import API_KEY, BASE_URL, DEFAULT_MODEL
 class CoWriter:
     """Generates academic text from user notes/ideas using LLM calls with streaming."""
 
-    def __init__(self, model=None, api_key=None, base_url=None, identity=None):
+    def __init__(self, model=None, api_key=None, base_url=None, identity=None,
+                 style_instructions=None):
         """
         Args:
             model: Model name to use.
             api_key: API key (defaults to config value).
             base_url: API base URL (defaults to config value).
             identity: Optional AcademicIdentity instance for role conditioning.
+            style_instructions: Optional string with style preferences to append to prompts.
         """
         self.model = model or DEFAULT_MODEL
         self.api_key = api_key or API_KEY
         self.base_url = base_url or BASE_URL
         self.identity = identity
+        self.style_instructions = style_instructions or ""
 
     def generate(self, intent, audience, notes, arguments, stream_callback=None):
         """
@@ -103,6 +106,7 @@ class CoWriter:
             "Spearheading, Groundbreaking, Cutting-edge, Paradigm shift, Synergy, Seamless, "
             "Transformative, Holistic, Nuanced, Comprehensive understanding.\n"
             "8. OUTPUT: Only the generated academic text. No preambles, no explanations, no meta-commentary.\n"
+            + (f"\n{self.style_instructions}" if self.style_instructions else "")
         )
 
     def _build_user_message(self, intent, audience, notes, arguments):
