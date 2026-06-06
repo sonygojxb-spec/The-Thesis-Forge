@@ -1,0 +1,33 @@
+{
+  "id": "FEAT-002",
+  "type": "fix",
+  "description": "Fix issues from v1 review: LLM aggression key, streaming display, post-processing UX, non-determinism, lexical regex hazard, AI risk disclaimer, API key from env, error recovery.",
+  "status": "in_progress",
+  "steps": [
+    "Add llm_aggression key to each intensity profile in config.py and use it in pipeline.py",
+    "Redesign process_stream to not yield Pass 1 chunks - run Pass 1 internally, yield only Pass 2",
+    "Fix post-processing silent replacement - run post-processing internally, yield final text cleanly",
+    "Add seed parameter to pipeline and all NLP stages for reproducibility",
+    "Fix lexical regex mutation - collect replacements first, apply in reverse order",
+    "Add AI risk score disclaimer in app.py",
+    "Add os.environ.get for API key in config.py, update README.md",
+    "Add error recovery in LLM streaming - fallback to Pass 1 or pre-LLM text on failure"
+  ],
+  "acceptance_criteria": [
+    "LLM stage uses dedicated llm_aggression config key",
+    "Streaming only shows Pass 2 output to user (Pass 1 runs internally)",
+    "Post-processing result is yielded cleanly without sentinel-based swap",
+    "Pipeline accepts seed parameter and passes to NLP stages",
+    "Lexical replacement handles multiple occurrences without position corruption",
+    "AI risk metric has disclaimer text",
+    "API key reads from THESIS_FORGE_API_KEY environment variable with fallback",
+    "LLM errors are caught with graceful fallback to previous stage output"
+  ],
+  "verification": [
+    "python -c \"from humanizer.pipeline import HumanizationPipeline; print('OK')\"",
+    "python -c \"from humanizer.config import API_KEY; import os; os.environ['THESIS_FORGE_API_KEY']='test123'; from importlib import reload; import humanizer.config; reload(humanizer.config); assert humanizer.config.API_KEY == 'test123'; print('ENV OK')\"",
+    "timeout 10 streamlit run app.py --server.headless true 2>&1 | head -10"
+  ],
+  "blocked_reason": null,
+  "findings": null
+}

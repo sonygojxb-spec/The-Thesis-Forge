@@ -1,0 +1,21 @@
+{
+  "project_type": "Python Streamlit web application - AI text humanizer",
+  "language": "Python",
+  "build_system": "pip with requirements.txt",
+  "test_framework": "None currently - will add basic validation",
+  "build_command": "pip install -r requirements.txt",
+  "test_command": "python -c \"import app; print('Import OK')\" || streamlit run app.py --server.headless true &",
+  "verification_instructions": "1. Install requirements: pip install -r requirements.txt. 2. Verify imports work: python -c 'from humanizer import pipeline; print(\"OK\")'. 3. Run streamlit app in headless mode to check for startup errors.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "pip install -r requirements.txt",
+  "environment_constraints": "OPEN_INTERNET - full network access available. Python 3.11 via pyenv. API endpoint: https://api.freemodel.dev (OpenAI-compatible). API key placeholder: 'insert your api key here'.",
+  "contribution_requirements": "Keep as Streamlit app runnable with 'streamlit run app.py'. Maintain academic tone. Preserve scientific accuracy. Keep API endpoint as freemodel.dev.",
+  "key_patterns": "Current app is single-file (app.py) with inline CSS styling, streaming API calls to OpenAI-compatible endpoint, textstat for readability metrics. Uses st.write_stream for live output. Dark theme configured in .streamlit/config.toml.",
+  "relevant_files": [
+    "app.py",
+    "requirements.txt",
+    "README.md",
+    ".streamlit/config.toml"
+  ],
+  "directory_structure": "Root level: app.py (main entry), requirements.txt (deps), README.md (docs), .streamlit/config.toml (theme config). Will be restructured into modular architecture with humanizer/ package."
+}
