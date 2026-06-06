@@ -106,7 +106,7 @@ class PerplexityVariance:
             if action < self.aggression * 0.25 and word_count > 12:
                 # Simplify this sentence
                 result.append(self._simplify_sentence(sent))
-            elif action < self.aggression * 0.5 and word_count > 8 and word_count < 30:
+            elif action < self.aggression * 0.2 and word_count > 8 and word_count < 30:
                 # Add complexity
                 result.append(self._complexify_sentence(sent))
             elif (action < self.aggression * 0.3 and word_count > 20 and
@@ -161,7 +161,7 @@ class PerplexityVariance:
             return sentence
 
         # Insert a parenthetical phrase
-        if self.rng.random() < 0.6:
+        if self.rng.random() < 0.25:
             insertion = self.rng.choice(self.parentheticals)
             # Find a good insertion point (after subject, around mid-sentence)
             insert_pos = self.rng.randint(3, min(8, len(words) - 2))
@@ -182,17 +182,12 @@ class PerplexityVariance:
                 if not found_valid:
                     return sentence
 
-            # Wrap in appropriate punctuation
-            if self.rng.random() < 0.5:
-                # Use dashes
-                words.insert(insert_pos, f"- {insertion} -")
-            else:
-                # Use commas - check the word at insert_pos doesn't start with punctuation
-                if insert_pos < len(words) and words[insert_pos][0] in punctuation_chars:
-                    return sentence
-                if not words[insert_pos - 1].endswith(','):
-                    words[insert_pos - 1] = words[insert_pos - 1] + ','
-                words.insert(insert_pos, f"{insertion},")
+            # Wrap in commas
+            if insert_pos < len(words) and words[insert_pos][0] in punctuation_chars:
+                return sentence
+            if not words[insert_pos - 1].endswith(','):
+                words[insert_pos - 1] = words[insert_pos - 1] + ','
+            words.insert(insert_pos, f"{insertion},")
 
             result = ' '.join(words)
             # Post-insertion cleanup: fix double commas and dash-adjacent-to-punctuation

@@ -164,7 +164,7 @@ class PostProcessor:
             semicolons = [m.start() for m in re.finditer(';', text)]
             if semicolons:
                 idx = self.rng.choice(semicolons)
-                replacement = self.rng.choice(['. ', ' - '])
+                replacement = '. '
                 text = text[:idx] + replacement + text[idx + 1:]
                 # Capitalize after period
                 next_char_idx = idx + len(replacement)
@@ -185,12 +185,11 @@ class PostProcessor:
 
         for sent in sentences:
             # Occasionally add a slightly informal connector
-            if (self.rng.random() < self.aggression * 0.1 and
+            if (self.rng.random() < self.aggression * 0.03 and
                     len(sent.split()) > 10):
                 informal_connectors = [
-                    " - and this is key - ",
                     " (though not always) ",
-                    " - in theory at least - ",
+                    " (to some extent) ",
                 ]
                 words = sent.split()
                 if len(words) > 6:
