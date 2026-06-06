@@ -4,7 +4,7 @@ Stage 3: Multi-pass LLM Rewriting
 Performs two passes of LLM-based rewriting with different temperatures
 and system prompts to create natural-sounding academic text.
 
-Pass 1: Focuses on natural sentence rhythm and removing AI patterns.
+Pass 1: Focuses on natural sentence rhythm, varied structure, and authentic voice.
 Pass 2: Injects personal academic voice with hedging and discipline phrasing.
 """
 
@@ -48,7 +48,7 @@ class LLMRewriter:
         if not text.strip():
             return text
 
-        # Pass 1: Natural rhythm and de-AI-ification
+        # Pass 1: Natural rhythm and sentence variation
         try:
             pass1_result = self._llm_pass(
                 text,
@@ -163,34 +163,34 @@ class LLMRewriter:
             yield pass1_result
 
     def _get_pass1_prompt(self):
-        """System prompt for pass 1: rhythm and de-AI."""
+        """System prompt for pass 1: rhythm and natural variation."""
         intensity_detail = ""
         if self.aggression >= 0.7:
             intensity_detail = (
-                "Be aggressive in breaking AI patterns. Vary sentence length dramatically. "
+                "Be bold in varying sentence structure. Vary sentence length dramatically. "
                 "Some sentences should be 5-8 words. Others 30+. "
                 "Use unusual but accurate word choices. "
             )
         elif self.aggression >= 0.4:
             intensity_detail = (
                 "Moderately vary sentence structures. Mix short and long sentences. "
-                "Replace common AI phrasing with more natural alternatives. "
+                "Replace overly generic phrasing with more natural alternatives. "
             )
         else:
             intensity_detail = (
                 "Make light adjustments to sentence rhythm. "
-                "Fix only the most obvious AI patterns. "
+                "Fix only the most obviously stiff or formulaic phrasing. "
             )
 
         return (
-            "You are an experienced academic researcher rewriting a draft to sound naturally human-written. "
-            "Your goal is to make this text undetectable by AI detection tools like Turnitin.\n\n"
+            "You are an experienced academic researcher improving a draft for naturalness and readability. "
+            "Your goal is to make this text read as though a skilled human author wrote it in one fluid session.\n\n"
             "CRITICAL RULES:\n"
             "1. BURSTINESS: Vary sentence lengths dramatically. Mix very short sentences (5-10 words) "
             "with complex ones (25-40 words). Real humans do not write uniformly.\n"
-            "2. PERPLEXITY: Avoid the most predictable word choices. Use slightly unexpected but "
-            "accurate vocabulary. Do not use: Moreover, Furthermore, Additionally, Consequently, "
-            "Nevertheless, It is worth noting, Crucially, Delving into, Multifaceted, Tapestry.\n"
+            "2. VOCABULARY: Avoid the most predictable or generic word choices. Use slightly unexpected but "
+            "accurate vocabulary. Avoid overused transitions like: Moreover, Furthermore, Additionally, "
+            "Consequently, Nevertheless, It is worth noting, Crucially, Delving into, Multifaceted, Tapestry.\n"
             "3. NATURAL FLOW: Write like a real researcher drafting - sometimes starting sentences "
             "with 'And' or 'But', occasionally using parenthetical asides, varying paragraph lengths.\n"
             "4. PRESERVE: Keep all scientific facts, data, terminology, and core meaning intact.\n"
@@ -246,7 +246,7 @@ class LLMRewriter:
             "model": self.model,
             "messages": [
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": f"Rewrite this text:\n\n{text}"}
+                {"role": "user", "content": f"Please improve the writing style of this academic text:\n\n{text}"}
             ],
             "temperature": temperature,
             "stream": True
