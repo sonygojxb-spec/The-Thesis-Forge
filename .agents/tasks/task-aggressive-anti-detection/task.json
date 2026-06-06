@@ -1,0 +1,7 @@
+{
+  "task_id": "task-aggressive-anti-detection",
+  "task_description": "Aggressively overhaul all humanization pipeline stages to reduce AI detection from 40-71% to below 20%. Key strategies: Indian English academic voice in LLM prompts, expanded vocabulary disruption, dramatically more aggressive structural/perplexity variance, n-gram pattern disruption, contraction injection, and discourse marker injection.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002"],
+  "blocked_reason": null
+}

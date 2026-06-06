@@ -51,6 +51,13 @@ class PerplexityVariance:
             "from this perspective",
             "in most cases",
             "given these factors",
+            "as is often the case in such studies",
+            "to put it differently",
+            "one might say",
+            "in a manner of speaking",
+            "so to say",
+            "if one may say so",
+            "as it were",
         ]
         # Simplification connectors
         self.simple_starters = [
@@ -103,19 +110,44 @@ class PerplexityVariance:
             action = self.rng.random()
             modification_threshold = 1.0 - (self.aggression * 0.5)
 
-            if action < self.aggression * 0.25 and word_count > 12:
+            if action < self.aggression * 0.4 and word_count > 12:
                 # Simplify this sentence
                 result.append(self._simplify_sentence(sent))
-            elif action < self.aggression * 0.2 and word_count > 8 and word_count < 30:
+            elif action < self.aggression * 0.35 and word_count > 8 and word_count < 30:
                 # Add complexity
                 result.append(self._complexify_sentence(sent))
-            elif (action < self.aggression * 0.3 and word_count > 20 and
+            elif (action < self.aggression * 0.4 and word_count > 20 and
                   i > 0 and i < len(sentences) - 1):
                 # Break into two with different complexity
                 parts = self._create_length_contrast(sent)
                 result.extend(parts)
             else:
                 result.append(sent)
+
+        result = self._inject_abrupt_short_sentences(result)
+
+        return result
+
+    def _inject_abrupt_short_sentences(self, sentences):
+        """Insert very short declarative sentences between longer ones to break uniform rhythm."""
+        short_declarations = [
+            "This matters.",
+            "The data confirms it.",
+            "Consider the implications.",
+            "This is significant.",
+            "The pattern holds.",
+            "Results vary.",
+            "This warrants attention.",
+        ]
+
+        result = []
+        for i, sent in enumerate(sentences):
+            result.append(sent)
+            # Insert short sentence after long ones
+            if (len(sent.split()) > 20 and
+                    i < len(sentences) - 1 and
+                    self.rng.random() < self.aggression * 0.15):
+                result.append(self.rng.choice(short_declarations))
 
         return result
 

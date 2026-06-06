@@ -1,0 +1,44 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Overhaul stage_structural.py, stage_perplexity.py, and stage_postprocess.py to dramatically increase structural disruption, perplexity variance, and post-LLM token pattern disruption. Add n-gram disruption, contraction injection, Indian English discourse markers, and more aggressive sentence restructuring.",
+  "status": "in_progress",
+  "steps": [
+    "1. In humanizer/stage_structural.py: Increase clause reordering probability from (aggression * 0.3) to (aggression * 0.6) in _reorder_clauses(). This makes structural changes much more aggressive.",
+    "2. In humanizer/stage_structural.py: Add a new method _invert_sentence_order(self, sentences) that occasionally reverses the order of presenting information within a paragraph. For groups of 3-4 sentences that describe a sequence, sometimes present the conclusion first then the reasoning (if aggression > 0.5 and random check passes at aggression * 0.25 probability). Call this after _reorder_clauses in process().",
+    "3. In humanizer/stage_structural.py: Add a new method _inject_rhetorical_questions(self, sentences) that occasionally converts a statement into a rhetorical question form (e.g., 'X is important' -> 'Why is X important?' followed by the explanation). Apply at aggression * 0.1 probability for sentences longer than 15 words. Call this as part of the processing pipeline.",
+    "4. In humanizer/stage_structural.py: Lower the split threshold for long sentences. Change from `int(35 - (self.aggression * 10))` to `int(30 - (self.aggression * 10))` so at max aggression, sentences over 20 words get split.",
+    "5. In humanizer/stage_perplexity.py: Increase the simplification threshold from (aggression * 0.25) to (aggression * 0.4). This means 40% of eligible sentences get simplified at max aggression.",
+    "6. In humanizer/stage_perplexity.py: Increase the complexification threshold from (aggression * 0.2) to (aggression * 0.35). More sentences get parenthetical insertions.",
+    "7. In humanizer/stage_perplexity.py: Increase the length contrast threshold from (aggression * 0.3) to (aggression * 0.4). More long sentences get broken into contrasting-length pairs.",
+    "8. In humanizer/stage_perplexity.py: Add a new method _inject_abrupt_short_sentences(self, sentences) that inserts very short declarative sentences (3-6 words) between longer ones to break uniform rhythm. Examples: 'This matters.', 'The data confirms it.', 'Consider the implications.', 'This is significant.', 'The pattern holds.', 'Results vary.', 'This warrants attention.'. Insert at aggression * 0.15 probability between sentences longer than 20 words. Call this at the end of _inject_variance().",
+    "9. In humanizer/stage_perplexity.py: Expand parentheticals list to include Indian English academic asides: 'as is often the case in such studies', 'to put it differently', 'one might say', 'in a manner of speaking', 'so to say', 'if one may say so', 'as it were'.",
+    "10. In humanizer/stage_postprocess.py: Add a new method _disrupt_ngram_patterns(self, text) that identifies and disrupts common 3-gram and 4-gram patterns. Operations: swap adjective-noun pairs occasionally ('important finding' -> 'finding of importance'), insert adverbs into verb phrases ('has shown' -> 'has consistently shown' or 'has, in fact, shown'), reorder prepositional phrase chains. Apply at aggression * 0.3 probability per eligible phrase. Call this after _remove_ai_transitions() in process().",
+    "11. In humanizer/stage_postprocess.py: Add a new method _inject_contractions(self, text) that converts formal constructions to contractions at (aggression * 0.3) probability: 'it is' -> 'it\\'s', 'do not' -> 'don\\'t', 'does not' -> 'doesn\\'t', 'cannot' -> 'can\\'t', 'will not' -> 'won\\'t', 'would not' -> 'wouldn\\'t', 'should not' -> 'shouldn\\'t', 'is not' -> 'isn\\'t', 'are not' -> 'aren\\'t', 'has not' -> 'hasn\\'t', 'have not' -> 'haven\\'t', 'that is' -> 'that\\'s', 'there is' -> 'there\\'s'. Only apply in non-first sentences of paragraphs to maintain academic tone in opening statements. Call this after _disrupt_ngram_patterns() in process().",
+    "12. In humanizer/stage_postprocess.py: Add a new method _inject_discourse_markers(self, text) that inserts Indian English discourse markers from config.INDIAN_DISCOURSE_MARKERS at sentence boundaries. Insert at aggression * 0.08 probability before sentences that don't already start with a connector. Import INDIAN_DISCOURSE_MARKERS from config. Call this after _inject_contractions() in process().",
+    "13. In humanizer/stage_postprocess.py: Expand the starters_to_add list in _rephrase_starter() to include more diverse and Indian English options: 'One may observe that', 'It is worth considering that', 'Interestingly,', 'On closer examination,', 'Viewed differently,', 'That said,', 'To be precise,', 'Broadly,', 'In point of fact,'.",
+    "14. In humanizer/stage_postprocess.py: In _inject_natural_imperfections(), increase the probability from (aggression * 0.03) to (aggression * 0.08) and add more informal connectors: '(admittedly)', '(in a sense)', '(one might argue)', '(to some degree)'."
+  ],
+  "acceptance_criteria": [
+    "stage_structural.py clause reordering uses aggression * 0.6",
+    "stage_structural.py has _invert_sentence_order and _inject_rhetorical_questions methods",
+    "stage_structural.py split threshold formula is int(30 - (self.aggression * 10))",
+    "stage_perplexity.py simplification uses aggression * 0.4",
+    "stage_perplexity.py complexification uses aggression * 0.35",
+    "stage_perplexity.py has _inject_abrupt_short_sentences method",
+    "stage_perplexity.py parentheticals include Indian English phrases",
+    "stage_postprocess.py has _disrupt_ngram_patterns, _inject_contractions, _inject_discourse_markers methods",
+    "stage_postprocess.py process() calls all new methods in correct order",
+    "stage_postprocess.py starters_to_add includes Indian English options",
+    "All modules import without error",
+    "Pipeline processes text at all intensity levels without crashing"
+  ],
+  "verification": [
+    "python -c \"from humanizer.stage_structural import StructuralVariation; s = StructuralVariation(aggression=0.9, seed=42); text = 'The algorithm performs well in most cases. It handles edge cases efficiently. The results are statistically significant. This demonstrates the robustness of our approach. One limitation exists however.'; result = s.process(text); print(result); print('Structural OK')\"",
+    "python -c \"from humanizer.stage_perplexity import PerplexityVariance; s = PerplexityVariance(aggression=0.9, seed=42); text = 'The model achieves state-of-the-art performance on all benchmarks tested. Furthermore, the ablation studies confirm that each component contributes meaningfully to the overall system. The training procedure converges within fifty epochs on standard hardware configurations.'; result = s.process(text); print(result); print('Perplexity OK')\"",
+    "python -c \"from humanizer.stage_postprocess import PostProcessor; s = PostProcessor(aggression=0.9, seed=42); text = 'It is important to note that the results are significant. Moreover, the findings demonstrate clear patterns. The system does not fail under pressure. It is evident that performance improves.'; result = s.process(text); print(result); assert 'Moreover' not in result or 'moreover' not in result; print('Postprocess OK')\"",
+    "python -c \"from humanizer.pipeline import HumanizationPipeline; p = HumanizationPipeline(intensity=5); print('Full pipeline OK')\""
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
