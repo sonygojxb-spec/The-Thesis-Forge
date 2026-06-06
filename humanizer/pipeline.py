@@ -5,6 +5,8 @@ Chains all humanization stages together with configurable intensity
 and stage toggles. Supports progress callbacks for UI integration.
 """
 
+import random
+
 from humanizer.config import INTENSITY_PROFILES, DEFAULT_MODEL, API_KEY, BASE_URL
 from humanizer.stage_structural import StructuralVariation
 from humanizer.stage_lexical import LexicalInjection
@@ -35,7 +37,7 @@ class HumanizationPipeline:
     }
 
     def __init__(self, intensity=4, model=None, api_key=None, base_url=None,
-                 stage_overrides=None, progress_callback=None):
+                 stage_overrides=None, progress_callback=None, seed=None):
         """
         Initialize the pipeline.
 
@@ -46,12 +48,14 @@ class HumanizationPipeline:
             base_url: API base URL.
             stage_overrides: Dict of {stage_name: bool} to enable/disable stages.
             progress_callback: Callable(stage_name, status) for UI updates.
+            seed: Optional int seed for reproducible NLP stage outputs.
         """
         self.intensity = max(1, min(5, intensity))
         self.model = model or DEFAULT_MODEL
         self.api_key = api_key or API_KEY
         self.base_url = base_url or BASE_URL
         self.progress_callback = progress_callback
+        self.seed = seed
 
         # Get intensity profile
         profile = INTENSITY_PROFILES[self.intensity]
@@ -89,7 +93,8 @@ class HumanizationPipeline:
         if "structural" in enabled_stages:
             self._notify_progress("structural", "running")
             stage = StructuralVariation(
-                aggression=self.stage_config.get("structural_aggression", 0.5)
+                aggression=self.stage_config.get("structural_aggression", 0.5),
+                seed=self.seed,
             )
             current_text = stage.process(current_text)
             self._notify_progress("structural", "complete")
@@ -98,7 +103,8 @@ class HumanizationPipeline:
         if "lexical" in enabled_stages:
             self._notify_progress("lexical", "running")
             stage = LexicalInjection(
-                aggression=self.stage_config.get("lexical_aggression", 0.5)
+                aggression=self.stage_config.get("lexical_aggression", 0.5),
+                seed=self.seed,
             )
             current_text = stage.process(current_text)
             self._notify_progress("lexical", "complete")
@@ -107,19 +113,24 @@ class HumanizationPipeline:
         if "llm_rewrite" in enabled_stages:
             self._notify_progress("llm_rewrite", "running")
             stage = LLMRewriter(
-                aggression=self.stage_config.get("lexical_aggression", 0.5),
+                aggression=self.stage_config.get("llm_aggression", 0.5),
                 model=self.model,
                 api_key=self.api_key,
                 base_url=self.base_url,
             )
-            current_text = stage.process(current_text, stream_callback=stream_callback)
+            try:
+                current_text = stage.process(current_text, stream_callback=stream_callback)
+            except RuntimeError:
+                # LLM failed entirely; fall back to pre-LLM text
+                pass
             self._notify_progress("llm_rewrite", "complete")
 
         # Stage 4: Perplexity Variance
         if "perplexity" in enabled_stages:
             self._notify_progress("perplexity", "running")
             stage = PerplexityVariance(
-                aggression=self.stage_config.get("perplexity_aggression", 0.5)
+                aggression=self.stage_config.get("perplexity_aggression", 0.5),
+                seed=self.seed,
             )
             current_text = stage.process(current_text)
             self._notify_progress("perplexity", "complete")
@@ -128,7 +139,8 @@ class HumanizationPipeline:
         if "postprocess" in enabled_stages:
             self._notify_progress("postprocess", "running")
             stage = PostProcessor(
-                aggression=self.stage_config.get("postprocess_aggression", 0.5)
+                aggression=self.stage_config.get("postprocess_aggression", 0.5),
+                seed=self.seed,
             )
             current_text = stage.process(current_text)
             self._notify_progress("postprocess", "complete")
@@ -140,13 +152,17 @@ class HumanizationPipeline:
         Run the pipeline and yield streaming output from the LLM stage.
 
         Non-LLM stages run synchronously before and after the LLM stage.
-        The LLM stage yields chunks for real-time display.
+        Pass 1 runs internally (not yielded). Only Pass 2 chunks are yielded
+        for real-time display. Post-processing runs after streaming and the
+        final text is yielded if it differs from what was streamed.
 
         Args:
             text: Input text to humanize.
 
         Yields:
-            Text chunks during LLM stage, then final post-processed text.
+            Text chunks during LLM Pass 2, then optionally a
+            "__POSTPROCESSED__" sentinel followed by the final text if
+            post-processing changed the output.
         """
         if not text.strip():
             yield text
@@ -159,7 +175,8 @@ class HumanizationPipeline:
         if "structural" in enabled_stages:
             self._notify_progress("structural", "running")
             stage = StructuralVariation(
-                aggression=self.stage_config.get("structural_aggression", 0.5)
+                aggression=self.stage_config.get("structural_aggression", 0.5),
+                seed=self.seed,
             )
             current_text = stage.process(current_text)
             self._notify_progress("structural", "complete")
@@ -167,31 +184,56 @@ class HumanizationPipeline:
         if "lexical" in enabled_stages:
             self._notify_progress("lexical", "running")
             stage = LexicalInjection(
-                aggression=self.stage_config.get("lexical_aggression", 0.5)
+                aggression=self.stage_config.get("lexical_aggression", 0.5),
+                seed=self.seed,
             )
             current_text = stage.process(current_text)
             self._notify_progress("lexical", "complete")
+
+        pre_llm_text = current_text
 
         # LLM stage (streaming)
         if "llm_rewrite" in enabled_stages:
             self._notify_progress("llm_rewrite", "running")
             stage = LLMRewriter(
-                aggression=self.stage_config.get("lexical_aggression", 0.5),
+                aggression=self.stage_config.get("llm_aggression", 0.5),
                 model=self.model,
                 api_key=self.api_key,
                 base_url=self.base_url,
             )
 
-            llm_chunks = []
-            for chunk in stage.process_stream(current_text):
-                # Filter out pass separator
-                if chunk == "\n\n---PASS2---\n\n":
-                    llm_chunks = []  # Reset for pass 2
-                    continue
-                llm_chunks.append(chunk)
-                yield chunk
+            try:
+                # Run Pass 1 internally (collect but do not yield)
+                pass1_chunks = []
+                for chunk in stage.pass1_stream(current_text):
+                    pass1_chunks.append(chunk)
+                pass1_result = ''.join(pass1_chunks)
 
-            current_text = ''.join(llm_chunks)
+                if not pass1_result.strip():
+                    pass1_result = current_text
+
+                # Run Pass 2 and yield chunks for streaming display
+                if stage.aggression >= 0.5:
+                    pass2_chunks = []
+                    try:
+                        for chunk in stage.pass2_stream(pass1_result):
+                            pass2_chunks.append(chunk)
+                            yield chunk
+                        pass2_result = ''.join(pass2_chunks)
+                        current_text = pass2_result if pass2_result.strip() else pass1_result
+                    except RuntimeError:
+                        # Pass 2 failed; fall back to Pass 1 result
+                        current_text = pass1_result
+                        yield current_text
+                else:
+                    # No Pass 2 at low aggression; yield Pass 1 result
+                    current_text = pass1_result
+                    yield current_text
+            except RuntimeError:
+                # LLM failed entirely; fall back to pre-LLM text
+                current_text = pre_llm_text
+                yield current_text
+
             self._notify_progress("llm_rewrite", "complete")
         else:
             # If no LLM stage, yield the pre-processed text
@@ -203,7 +245,8 @@ class HumanizationPipeline:
         if "perplexity" in enabled_stages:
             self._notify_progress("perplexity", "running")
             stage = PerplexityVariance(
-                aggression=self.stage_config.get("perplexity_aggression", 0.5)
+                aggression=self.stage_config.get("perplexity_aggression", 0.5),
+                seed=self.seed,
             )
             post_text = stage.process(post_text)
             self._notify_progress("perplexity", "complete")
@@ -211,14 +254,15 @@ class HumanizationPipeline:
         if "postprocess" in enabled_stages:
             self._notify_progress("postprocess", "running")
             stage = PostProcessor(
-                aggression=self.stage_config.get("postprocess_aggression", 0.5)
+                aggression=self.stage_config.get("postprocess_aggression", 0.5),
+                seed=self.seed,
             )
             post_text = stage.process(post_text)
             self._notify_progress("postprocess", "complete")
 
         # If post-processing changed the text, yield the final version
         if post_text != current_text:
-            yield "\n\n__FINAL__\n\n"
+            yield "\n\n__POSTPROCESSED__\n\n"
             yield post_text
 
     def _notify_progress(self, stage, status):

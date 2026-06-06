@@ -40,12 +40,14 @@ from humanizer.config import PROTECTED_TERMS
 class LexicalInjection:
     """Replaces predictable words with less common synonyms."""
 
-    def __init__(self, aggression=0.5):
+    def __init__(self, aggression=0.5, seed=None):
         """
         Args:
             aggression: Float 0-1 controlling replacement aggressiveness.
+            seed: Optional int seed for reproducible results.
         """
         self.aggression = aggression
+        self.seed = seed
         # Common academic words that are frequently flagged
         self.target_words = {
             "utilize": ["employ", "use", "apply", "leverage"],
@@ -75,6 +77,9 @@ class LexicalInjection:
         if not text.strip():
             return text
 
+        if self.seed is not None:
+            random.seed(self.seed)
+
         # Direct replacement of known AI-favorite words
         text = self._replace_target_words(text)
 
@@ -86,19 +91,25 @@ class LexicalInjection:
 
     def _replace_target_words(self, text):
         """Replace known AI-preferred vocabulary with alternatives."""
-        for word, replacements in self.target_words.items():
+        # Collect all replacements as (start, end, replacement) tuples
+        replacements = []
+        for word, candidates in self.target_words.items():
             if random.random() > self.aggression:
                 continue
             pattern = re.compile(r'\b' + word + r'\b', re.IGNORECASE)
-            matches = pattern.finditer(text)
-            for match in matches:
+            for match in pattern.finditer(text):
                 if random.random() < self.aggression * 0.7:
-                    replacement = random.choice(replacements)
+                    replacement = random.choice(candidates)
                     # Preserve capitalization
                     if match.group()[0].isupper():
                         replacement = replacement[0].upper() + replacement[1:]
-                    text = text[:match.start()] + replacement + text[match.end():]
-                    break  # Only replace first occurrence per pass
+                    replacements.append((match.start(), match.end(), replacement))
+
+        # Apply replacements in reverse order to maintain position validity
+        replacements.sort(key=lambda r: r[0], reverse=True)
+        for start, end, replacement in replacements:
+            text = text[:start] + replacement + text[end:]
+
         return text
 
     def _wordnet_replace(self, text):

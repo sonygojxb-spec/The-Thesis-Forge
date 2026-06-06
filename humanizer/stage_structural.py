@@ -31,17 +31,22 @@ except ImportError:
 class StructuralVariation:
     """Applies structural transformations to text."""
 
-    def __init__(self, aggression=0.5):
+    def __init__(self, aggression=0.5, seed=None):
         """
         Args:
             aggression: Float 0-1 controlling how aggressively to restructure.
+            seed: Optional int seed for reproducible results.
         """
         self.aggression = aggression
+        self.seed = seed
 
     def process(self, text):
         """Apply structural variation to the input text."""
         if not text.strip():
             return text
+
+        if self.seed is not None:
+            random.seed(self.seed)
 
         paragraphs = text.split('\n\n')
         processed_paragraphs = []

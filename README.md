@@ -74,12 +74,24 @@ python -c "import nltk; nltk.download('wordnet'); nltk.download('omw-1.4')"
 
 ### API Configuration
 
-The app uses an OpenAI-compatible API endpoint. Edit `humanizer/config.py` to set your API key:
+The app uses an OpenAI-compatible API endpoint. You can configure the API key in two ways:
+
+**Option 1: Environment variable (recommended)**
+
+```bash
+export THESIS_FORGE_API_KEY="your-api-key-here"
+```
+
+**Option 2: Edit the config file directly**
+
+Edit `humanizer/config.py`:
 
 ```python
 API_KEY = "your-api-key-here"
 BASE_URL = "https://api.freemodel.dev"
 ```
+
+The environment variable takes precedence over the value in the config file.
 
 ## Usage
 

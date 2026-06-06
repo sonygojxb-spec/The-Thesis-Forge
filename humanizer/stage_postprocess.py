@@ -18,17 +18,22 @@ from humanizer.config import AI_TRANSITION_WORDS, TRANSITION_REPLACEMENTS
 class PostProcessor:
     """Final cleanup to remove AI fingerprints and add natural imperfections."""
 
-    def __init__(self, aggression=0.5):
+    def __init__(self, aggression=0.5, seed=None):
         """
         Args:
             aggression: Float 0-1 controlling post-processing intensity.
+            seed: Optional int seed for reproducible results.
         """
         self.aggression = aggression
+        self.seed = seed
 
     def process(self, text):
         """Apply all post-processing steps."""
         if not text.strip():
             return text
+
+        if self.seed is not None:
+            random.seed(self.seed)
 
         text = self._remove_ai_transitions(text)
         text = self._fix_repeated_starters(text)

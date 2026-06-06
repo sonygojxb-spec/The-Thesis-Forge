@@ -211,7 +211,8 @@ with col_left:
         m2.metric("Avg Length", f"{orig_stats['avg_len']} wds")
         m3.metric("Grade Level", orig_stats['grade'])
         m4.metric("Vocab Diversity", f"{orig_stats['vocabulary_diversity']:.2f}")
-        m5.metric("AI Risk", f"{orig_stats['ai_risk']}%")
+        m5.metric("AI Risk", f"{orig_stats['ai_risk']}%",
+                  help="Internal estimate only - not a guarantee of detection results.")
 
 # RIGHT COLUMN: OUTPUT
 with col_right:
@@ -267,21 +268,21 @@ with col_right:
                 if enable_llm:
                     # Use streaming mode for LLM stage
                     collected_chunks = []
-                    final_override = None
+                    postprocessed_text = None
 
                     for chunk in pipeline.process_stream(input_text):
-                        if chunk == "\n\n__FINAL__\n\n":
+                        if chunk == "\n\n__POSTPROCESSED__\n\n":
                             # Next chunk is the final post-processed text
-                            final_override = ""
+                            postprocessed_text = ""
                             continue
-                        if final_override is not None:
-                            final_override = chunk
+                        if postprocessed_text is not None:
+                            postprocessed_text = chunk
                             continue
                         collected_chunks.append(chunk)
                         stream_container.markdown(''.join(collected_chunks))
 
-                    if final_override:
-                        final_text = final_override
+                    if postprocessed_text:
+                        final_text = postprocessed_text
                         stream_container.markdown(final_text)
                     else:
                         final_text = ''.join(collected_chunks)
@@ -318,7 +319,8 @@ with col_right:
                         "AI Risk",
                         f"{new_stats['ai_risk']}%",
                         delta=f"-{risk_delta}%" if risk_delta and risk_delta > 0 else None,
-                        delta_color="normal"
+                        delta_color="normal",
+                        help="Internal estimate only - not a guarantee of detection results."
                     )
 
                     st.markdown("<br>", unsafe_allow_html=True)

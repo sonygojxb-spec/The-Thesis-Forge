@@ -49,31 +49,82 @@ class LLMRewriter:
             return text
 
         # Pass 1: Natural rhythm and de-AI-ification
-        pass1_result = self._llm_pass(
-            text,
-            system_prompt=self._get_pass1_prompt(),
-            temperature=self._get_pass1_temperature(),
-            stream_callback=stream_callback,
-        )
+        try:
+            pass1_result = self._llm_pass(
+                text,
+                system_prompt=self._get_pass1_prompt(),
+                temperature=self._get_pass1_temperature(),
+                stream_callback=stream_callback,
+            )
+        except RuntimeError:
+            # Pass 1 failed; return original text
+            return text
 
         if not pass1_result.strip():
             return text
 
         # Pass 2: Academic voice injection (only at higher aggression)
         if self.aggression >= 0.5:
-            pass2_result = self._llm_pass(
-                pass1_result,
-                system_prompt=self._get_pass2_prompt(),
-                temperature=self._get_pass2_temperature(),
-                stream_callback=stream_callback,
-            )
-            return pass2_result if pass2_result.strip() else pass1_result
+            try:
+                pass2_result = self._llm_pass(
+                    pass1_result,
+                    system_prompt=self._get_pass2_prompt(),
+                    temperature=self._get_pass2_temperature(),
+                    stream_callback=stream_callback,
+                )
+                return pass2_result if pass2_result.strip() else pass1_result
+            except RuntimeError:
+                # Pass 2 failed; return Pass 1 result
+                return pass1_result
 
         return pass1_result
+
+    def pass1_stream(self, text):
+        """
+        Run Pass 1 and yield chunks for streaming.
+
+        Args:
+            text: Input text to rewrite.
+
+        Yields:
+            Text chunks from Pass 1.
+        """
+        if not text.strip():
+            yield text
+            return
+
+        for chunk in self._llm_pass_stream(
+            text,
+            system_prompt=self._get_pass1_prompt(),
+            temperature=self._get_pass1_temperature(),
+        ):
+            yield chunk
+
+    def pass2_stream(self, text):
+        """
+        Run Pass 2 and yield chunks for streaming.
+
+        Args:
+            text: Input text (should be Pass 1 output).
+
+        Yields:
+            Text chunks from Pass 2.
+        """
+        if not text.strip():
+            yield text
+            return
+
+        for chunk in self._llm_pass_stream(
+            text,
+            system_prompt=self._get_pass2_prompt(),
+            temperature=self._get_pass2_temperature(),
+        ):
+            yield chunk
 
     def process_stream(self, text):
         """
         Process text and yield chunks for streaming display.
+        Kept for backward compatibility.
 
         Args:
             text: Input text to rewrite.
@@ -85,27 +136,31 @@ class LLMRewriter:
             yield text
             return
 
-        # Pass 1: Stream output
+        # Pass 1: Collect internally
         pass1_chunks = []
-        for chunk in self._llm_pass_stream(
-            text,
-            system_prompt=self._get_pass1_prompt(),
-            temperature=self._get_pass1_temperature(),
-        ):
-            pass1_chunks.append(chunk)
-            yield chunk
+        try:
+            for chunk in self.pass1_stream(text):
+                pass1_chunks.append(chunk)
+        except RuntimeError:
+            yield text
+            return
 
         pass1_result = ''.join(pass1_chunks)
 
+        if not pass1_result.strip():
+            yield text
+            return
+
         # Pass 2: Only at higher aggression
-        if self.aggression >= 0.5 and pass1_result.strip():
-            yield "\n\n---PASS2---\n\n"
-            for chunk in self._llm_pass_stream(
-                pass1_result,
-                system_prompt=self._get_pass2_prompt(),
-                temperature=self._get_pass2_temperature(),
-            ):
-                yield chunk
+        if self.aggression >= 0.5:
+            try:
+                for chunk in self.pass2_stream(pass1_result):
+                    yield chunk
+            except RuntimeError:
+                # Pass 2 failed; yield Pass 1 result
+                yield pass1_result
+        else:
+            yield pass1_result
 
     def _get_pass1_prompt(self):
         """System prompt for pass 1: rhythm and de-AI."""

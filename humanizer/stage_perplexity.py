@@ -30,12 +30,14 @@ except ImportError:
 class PerplexityVariance:
     """Injects variance in sentence complexity for natural perplexity patterns."""
 
-    def __init__(self, aggression=0.5):
+    def __init__(self, aggression=0.5, seed=None):
         """
         Args:
             aggression: Float 0-1 controlling how much variance to inject.
+            seed: Optional int seed for reproducible results.
         """
         self.aggression = aggression
+        self.seed = seed
         # Parenthetical insertions for complexity
         self.parentheticals = [
             "at least in part",
@@ -62,6 +64,9 @@ class PerplexityVariance:
         """Apply perplexity variance to the input text."""
         if not text.strip():
             return text
+
+        if self.seed is not None:
+            random.seed(self.seed)
 
         paragraphs = text.split('\n\n')
         processed = []

@@ -2,7 +2,9 @@
 Centralized configuration for the humanization pipeline.
 """
 
-API_KEY = "insert your api key here"
+import os
+
+API_KEY = os.environ.get("THESIS_FORGE_API_KEY", "insert your api key here")
 BASE_URL = "https://api.freemodel.dev"
 
 AVAILABLE_MODELS = ["gpt-4o", "gpt-4o-mini", "openai-t1-sg", "openai-t2-sg"]
@@ -21,6 +23,7 @@ INTENSITY_PROFILES = {
         "postprocess": True,
         "structural_aggression": 0.2,
         "lexical_aggression": 0.2,
+        "llm_aggression": 0.2,
         "perplexity_aggression": 0.0,
         "postprocess_aggression": 0.3,
     },
@@ -32,6 +35,7 @@ INTENSITY_PROFILES = {
         "postprocess": True,
         "structural_aggression": 0.3,
         "lexical_aggression": 0.3,
+        "llm_aggression": 0.4,
         "perplexity_aggression": 0.0,
         "postprocess_aggression": 0.4,
     },
@@ -43,6 +47,7 @@ INTENSITY_PROFILES = {
         "postprocess": True,
         "structural_aggression": 0.5,
         "lexical_aggression": 0.5,
+        "llm_aggression": 0.6,
         "perplexity_aggression": 0.4,
         "postprocess_aggression": 0.5,
     },
@@ -54,6 +59,7 @@ INTENSITY_PROFILES = {
         "postprocess": True,
         "structural_aggression": 0.7,
         "lexical_aggression": 0.7,
+        "llm_aggression": 0.75,
         "perplexity_aggression": 0.6,
         "postprocess_aggression": 0.7,
     },
@@ -65,6 +71,7 @@ INTENSITY_PROFILES = {
         "postprocess": True,
         "structural_aggression": 0.9,
         "lexical_aggression": 0.9,
+        "llm_aggression": 0.9,
         "perplexity_aggression": 0.8,
         "postprocess_aggression": 0.9,
     },
