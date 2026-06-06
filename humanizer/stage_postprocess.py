@@ -92,11 +92,32 @@ class PostProcessor:
 
     def _disrupt_ngram_patterns(self, text):
         """Identify and disrupt common n-gram patterns."""
-        # Swap adjective-noun pairs occasionally
+        # Mapping of adjectives to their noun forms for proper conversion
+        adjective_to_noun = {
+            "important": "importance",
+            "significant": "significance",
+            "critical": "criticality",
+            "key": "key importance",
+            "major": "major significance",
+            "primary": "primary relevance",
+            "essential": "essential nature",
+        }
+
+        # Swap adjective-noun pairs occasionally: "important finding" -> "finding of importance"
+        def adj_noun_replacer(m):
+            if self.rng.random() < self.aggression * 0.3:
+                adj = m.group(1).lower()
+                noun = m.group(2)
+                noun_form = adjective_to_noun.get(adj, adj)
+                # Preserve capitalization of original noun
+                if m.group(2)[0].isupper():
+                    return f"{noun} of {noun_form}"
+                return f"{noun} of {noun_form}"
+            return m.group(0)
+
         adjective_noun_patterns = [
             (r'\b(important|significant|critical|key|major|primary|essential)\s+(finding|result|factor|aspect|issue|point|role)\b',
-             lambda m: f"{m.group(2)} of {m.group(1).rstrip('al')}ce" if self.rng.random() < self.aggression * 0.3
-             else m.group(0)),
+             adj_noun_replacer),
         ]
 
         for pattern, repl in adjective_noun_patterns:
@@ -156,7 +177,7 @@ class PostProcessor:
                     continue
 
                 for formal, contraction in contraction_map.items():
-                    if self.rng.random() < self.aggression * 0.3:
+                    if self.rng.random() < self.aggression * 0.15:
                         pattern = re.compile(r'\b' + re.escape(formal) + r'\b', re.IGNORECASE)
                         matches = list(pattern.finditer(sent))
                         for match in reversed(matches):

@@ -254,33 +254,53 @@ class LexicalInjection:
         text = re.sub(r'\b(\w+)yzes\b', r'\1yses', text)
         text = re.sub(r'\b(\w+)yzing\b', r'\1ysing', text)
 
-        # Handle -ize -> -ise (but not words like 'size', 'prize', 'seize')
+        # Handle -ize -> -ise (but not words where -ize is part of the root)
         exceptions = {'size', 'sized', 'sizes', 'sizing',
                       'prize', 'prized', 'prizes', 'prizing',
                       'seize', 'seized', 'seizes', 'seizing',
-                      'capsize', 'capsized', 'capsizes', 'capsizing'}
+                      'capsize', 'capsized', 'capsizes', 'capsizing',
+                      'frozen', 'horizon', 'horizons',
+                      'citizen', 'citizens', 'citizenship'}
 
         def ize_replacer(match):
             word = match.group(0)
+            # Skip proper nouns (capitalized words)
+            if word[0].isupper():
+                return word
             if word.lower() in exceptions:
+                return word
+            if word.lower().rstrip('dse') in PROTECTED_TERMS or word.lower() in PROTECTED_TERMS:
                 return word
             return word[:-3] + 'ise'
 
         def ized_replacer(match):
             word = match.group(0)
+            if word[0].isupper():
+                return word
             if word.lower() in exceptions:
+                return word
+            if word.lower().rstrip('d') in PROTECTED_TERMS or word.lower() in PROTECTED_TERMS:
                 return word
             return word[:-4] + 'ised'
 
         def izes_replacer(match):
             word = match.group(0)
+            if word[0].isupper():
+                return word
             if word.lower() in exceptions:
+                return word
+            if word.lower().rstrip('s') in PROTECTED_TERMS or word.lower() in PROTECTED_TERMS:
                 return word
             return word[:-4] + 'ises'
 
         def izing_replacer(match):
             word = match.group(0)
+            if word[0].isupper():
+                return word
             if word.lower() in exceptions:
+                return word
+            base = word.lower()[:-4] + 'e'
+            if base in PROTECTED_TERMS or word.lower() in PROTECTED_TERMS:
                 return word
             return word[:-5] + 'ising'
 

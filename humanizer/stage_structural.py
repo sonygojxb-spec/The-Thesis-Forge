@@ -212,7 +212,7 @@ class StructuralVariation:
         i = 0
         while i < len(result) - 2:
             group_size = min(self.rng.choice([3, 4]), len(result) - i)
-            if self.rng.random() < self.aggression * 0.25:
+            if self.rng.random() < self.aggression * 0.12:
                 # Move the last sentence of the group to the front
                 group = result[i:i + group_size]
                 last = group[-1]
@@ -257,6 +257,15 @@ class StructuralVariation:
                 "But why does this matter?",
                 "What makes this significant?",
                 "Why is this relevant?",
+                "How does one account for this?",
+                "What explains this pattern?",
+                "Is this not precisely the point?",
+                "Can this be coincidental?",
+                "Does the evidence not suggest otherwise?",
+                "What does one make of this?",
+                "How might this be explained?",
+                "Why should this surprise anyone?",
+                "Does this not warrant attention?",
             ]
             return self.rng.choice(questions)
 
