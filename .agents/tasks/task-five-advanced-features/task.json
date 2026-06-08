@@ -1,0 +1,7 @@
+{
+  "task_id": "task-five-advanced-features",
+  "task_description": "Add 5 advanced features to The Thesis Forge: Voice Analysis module, Critic Loop, Identity/Role Conditioning, Co-writing Interface, and Revision Feedback Loop",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003"],
+  "blocked_reason": null
+}

@@ -1,0 +1,32 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Voice Analysis Module + Critic Loop + Identity Conditioning: Create humanizer/voice_analysis.py with hedge/booster/pronoun/engagement metrics and voice profiling. Create humanizer/critic.py that re-runs the pipeline if AI risk is too high (max 3 retries). Create humanizer/identity.py for academic identity/role conditioning that injects into LLM prompts. Update humanizer/config.py with new settings (critic thresholds, identity defaults, voice marker lists). Update humanizer/stage_llm_rewrite.py to accept and use identity context in prompts. Update humanizer/pipeline.py to integrate the critic loop. Update humanizer/__init__.py exports.",
+  "status": "completed",
+  "steps": [
+    "Create humanizer/voice_analysis.py with: (a) measure_hedges() counting hedging words (might, perhaps, seems to, could, arguably, it appears, one might), (b) measure_boosters() counting certainty words (clearly, definitely, certainly, undoubtedly, obviously, precisely), (c) measure_pronouns() counting first-person and inclusive pronouns (I, we, our, us, my), (d) measure_engagement() counting counter-voice markers (however, on the other hand, one might argue, conversely, alternatively, some scholars), (e) compute_enhanced_ttr() building on existing TTR with hapax legomena ratio and moving-average TTR, (f) detect_idiosyncrasies() finding unusual patterns (parenthetical asides, em-dashes, sentence fragments, questions), (g) get_voice_profile(text) returning a dict with all metrics aggregated for display",
+    "Create humanizer/critic.py with a CriticLoop class: __init__(self, pipeline_factory, max_retries=3, risk_threshold=40) where pipeline_factory is a callable that creates a pipeline with a given intensity. The run(text) method: (1) runs pipeline.process(text), (2) computes AI risk score on output via text_analysis.compute_ai_risk_score, (3) also runs voice_analysis.get_voice_profile, (4) if risk > threshold and retries < max_retries, increases intensity by 1 (capped at 5) and re-runs, (5) returns dict with final_text, attempts list (each with text, risk_score, voice_profile, intensity_used), and success boolean",
+    "Create humanizer/identity.py with an AcademicIdentity dataclass/class: role (str), field (str), institution (str, optional), style_preference (str: formal/semi-formal/conversational). Include a method get_prompt_injection() that returns a string to prepend/append to LLM system prompts describing the identity. Include get_discourse_preferences() returning list of preferred discourse markers based on field/style.",
+    "Update humanizer/config.py: Add CRITIC_DEFAULT_THRESHOLD = 40, CRITIC_MAX_RETRIES = 3, VOICE_HEDGES list, VOICE_BOOSTERS list, VOICE_ENGAGEMENT_MARKERS list, ACADEMIC_ROLES list, ACADEMIC_FIELDS list, STYLE_PREFERENCES list",
+    "Update humanizer/stage_llm_rewrite.py: Add identity parameter to __init__. Modify _get_pass1_prompt() and _get_pass2_prompt() to incorporate identity.get_prompt_injection() when identity is provided. The identity string should be inserted after the initial persona description.",
+    "Update humanizer/pipeline.py: Add identity parameter to HumanizationPipeline.__init__() and pass it through to LLMRewriter. No critic integration in the pipeline class itself - the critic wraps the pipeline externally.",
+    "Update humanizer/__init__.py to export VoiceAnalyzer (or get_voice_profile), CriticLoop, AcademicIdentity"
+  ],
+  "acceptance_criteria": [
+    "humanizer/voice_analysis.py exists with get_voice_profile(text) returning a dict with keys: hedges, boosters, pronouns, engagement, ttr, enhanced_ttr, idiosyncrasies",
+    "humanizer/critic.py exists with CriticLoop class that accepts a pipeline factory and runs retry logic",
+    "humanizer/identity.py exists with AcademicIdentity class that generates prompt injection strings",
+    "LLMRewriter accepts optional identity parameter and incorporates it into prompts",
+    "HumanizationPipeline accepts optional identity parameter and passes to LLMRewriter",
+    "All new modules are importable without errors: python -c \"from humanizer.voice_analysis import get_voice_profile; from humanizer.critic import CriticLoop; from humanizer.identity import AcademicIdentity\""
+  ],
+  "verification": [
+    "Run: pip install -r requirements.txt",
+    "Run: python -c \"from humanizer.voice_analysis import get_voice_profile; profile = get_voice_profile('This might perhaps be significant. We clearly observed the results.'); print(profile); assert 'hedges' in profile and 'boosters' in profile\"",
+    "Run: python -c \"from humanizer.critic import CriticLoop; print('CriticLoop imported OK')\"",
+    "Run: python -c \"from humanizer.identity import AcademicIdentity; identity = AcademicIdentity(role='PhD student', field='Computer Science'); print(identity.get_prompt_injection())\"",
+    "Run: python -c \"from humanizer.pipeline import HumanizationPipeline; from humanizer.identity import AcademicIdentity; p = HumanizationPipeline(intensity=3, identity=AcademicIdentity(role='Professor', field='Physics')); print('Pipeline with identity OK')\""
+  ],
+  "blocked_reason": null,
+  "findings": "All verification steps pass. Voice analysis correctly counts hedges/boosters/pronouns. Identity prompt injection works. Pipeline accepts identity parameter and passes to LLMRewriter. CriticLoop imports cleanly. No pre-existing tests to break."
+}

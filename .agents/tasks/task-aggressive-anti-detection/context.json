@@ -1,0 +1,27 @@
+{
+  "project_type": "Python Streamlit web application - AI text humanization pipeline",
+  "language": "Python 3.11",
+  "build_system": "pip with requirements.txt, no Makefile or formal build system",
+  "test_framework": "No formal test suite - validation via import checks and manual testing",
+  "build_command": "pip install -r requirements.txt && python -c \"from humanizer.pipeline import HumanizationPipeline; print('OK')\"",
+  "test_command": "python -c \"from humanizer.pipeline import HumanizationPipeline; from humanizer.config import INTENSITY_PROFILES; p = HumanizationPipeline(intensity=4); print('Pipeline OK')\"",
+  "verification_instructions": "1. Run import validation of all modules. 2. Verify pipeline instantiation at all intensity levels. 3. Run streamlit app in headless mode to check for errors.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "pip install -r requirements.txt && python -m spacy download en_core_web_sm && python -c \"import nltk; nltk.download('wordnet'); nltk.download('omw-1.4')\"",
+  "environment_constraints": "OPEN_INTERNET - full network access available. spaCy en_core_web_sm model required. NLTK WordNet data required.",
+  "contribution_requirements": "No formal CONTRIBUTING.md. Code should be clean Python, maintain the existing class-based stage architecture.",
+  "key_patterns": "Each stage is a class with __init__(aggression, seed) and process(text) method. Pipeline orchestrates stages in order. Config.py holds all constants. Streaming is handled via generator methods in LLMRewriter.",
+  "relevant_files": [
+    "humanizer/config.py",
+    "humanizer/stage_llm_rewrite.py",
+    "humanizer/stage_structural.py",
+    "humanizer/stage_lexical.py",
+    "humanizer/stage_perplexity.py",
+    "humanizer/stage_postprocess.py",
+    "humanizer/pipeline.py",
+    "humanizer/text_analysis.py",
+    "app.py",
+    "requirements.txt"
+  ],
+  "directory_structure": "Root: app.py (Streamlit UI), requirements.txt. humanizer/: config.py (constants), pipeline.py (orchestrator), stage_structural.py (stage 1), stage_lexical.py (stage 2), stage_llm_rewrite.py (stage 3), stage_perplexity.py (stage 4), stage_postprocess.py (stage 5), text_analysis.py (analytics)."
+}

@@ -12,7 +12,7 @@ Applies finishing touches to remove remaining AI fingerprints:
 import re
 import random
 
-from humanizer.config import AI_TRANSITION_WORDS, TRANSITION_REPLACEMENTS
+from humanizer.config import AI_TRANSITION_WORDS, TRANSITION_REPLACEMENTS, INDIAN_DISCOURSE_MARKERS
 
 
 class PostProcessor:
@@ -34,6 +34,9 @@ class PostProcessor:
             return text
 
         text = self._remove_ai_transitions(text)
+        text = self._disrupt_ngram_patterns(text)
+        text = self._inject_contractions(text)
+        text = self._inject_discourse_markers(text)
         text = self._fix_repeated_starters(text)
         text = self._vary_punctuation(text)
         text = self._inject_natural_imperfections(text)
@@ -87,6 +90,144 @@ class PostProcessor:
 
         return text
 
+    def _disrupt_ngram_patterns(self, text):
+        """Identify and disrupt common n-gram patterns."""
+        # Mapping of adjectives to their noun forms for proper conversion
+        adjective_to_noun = {
+            "important": "importance",
+            "significant": "significance",
+            "critical": "criticality",
+            "key": "key importance",
+            "major": "major significance",
+            "primary": "primary relevance",
+            "essential": "essential nature",
+        }
+
+        # Swap adjective-noun pairs occasionally: "important finding" -> "finding of importance"
+        def adj_noun_replacer(m):
+            if self.rng.random() < self.aggression * 0.3:
+                adj = m.group(1).lower()
+                noun = m.group(2)
+                noun_form = adjective_to_noun.get(adj, adj)
+                # Preserve capitalization of original noun
+                if m.group(2)[0].isupper():
+                    return f"{noun} of {noun_form}"
+                return f"{noun} of {noun_form}"
+            return m.group(0)
+
+        adjective_noun_patterns = [
+            (r'\b(important|significant|critical|key|major|primary|essential)\s+(finding|result|factor|aspect|issue|point|role)\b',
+             adj_noun_replacer),
+        ]
+
+        for pattern, repl in adjective_noun_patterns:
+            text = re.sub(pattern, repl, text, flags=re.IGNORECASE)
+
+        # Insert adverbs into verb phrases
+        adverb_insertions = [
+            (r'\bhas shown\b', ['has consistently shown', 'has, in fact, shown', 'has clearly shown']),
+            (r'\bhas been\b', ['has long been', 'has, in effect, been', 'has indeed been']),
+            (r'\bcan be\b', ['can certainly be', 'can, in principle, be', 'can reasonably be']),
+            (r'\bwill be\b', ['will likely be', 'will, in all likelihood, be', 'will undoubtedly be']),
+            (r'\bmay be\b', ['may well be', 'may, arguably, be', 'may indeed be']),
+            (r'\bhave been\b', ['have often been', 'have, by and large, been', 'have consistently been']),
+        ]
+
+        for pattern, replacements in adverb_insertions:
+            matches = list(re.finditer(pattern, text, re.IGNORECASE))
+            for match in reversed(matches):
+                if self.rng.random() < self.aggression * 0.3:
+                    replacement = self.rng.choice(replacements)
+                    # Preserve case
+                    if match.group()[0].isupper():
+                        replacement = replacement[0].upper() + replacement[1:]
+                    text = text[:match.start()] + replacement + text[match.end():]
+
+        return text
+
+    def _inject_contractions(self, text):
+        """Convert formal constructions to contractions in non-first sentences."""
+        contraction_map = {
+            'it is': "it's",
+            'do not': "don't",
+            'does not': "doesn't",
+            'cannot': "can't",
+            'will not': "won't",
+            'would not': "wouldn't",
+            'should not': "shouldn't",
+            'is not': "isn't",
+            'are not': "aren't",
+            'has not': "hasn't",
+            'have not': "haven't",
+            'that is': "that's",
+            'there is': "there's",
+        }
+
+        paragraphs = text.split('\n\n')
+        result_paragraphs = []
+
+        for para in paragraphs:
+            sentences = re.split(r'(?<=[.!?])\s+', para)
+            result_sentences = []
+
+            for i, sent in enumerate(sentences):
+                if i == 0:
+                    # Keep first sentence formal
+                    result_sentences.append(sent)
+                    continue
+
+                for formal, contraction in contraction_map.items():
+                    if self.rng.random() < self.aggression * 0.15:
+                        pattern = re.compile(r'\b' + re.escape(formal) + r'\b', re.IGNORECASE)
+                        matches = list(pattern.finditer(sent))
+                        for match in reversed(matches):
+                            original = match.group()
+                            replacement = contraction
+                            # Preserve capitalization
+                            if original[0].isupper():
+                                replacement = replacement[0].upper() + replacement[1:]
+                            sent = sent[:match.start()] + replacement + sent[match.end():]
+
+                result_sentences.append(sent)
+
+            result_paragraphs.append(' '.join(result_sentences))
+
+        return '\n\n'.join(result_paragraphs)
+
+    def _inject_discourse_markers(self, text):
+        """Insert Indian English discourse markers at sentence boundaries."""
+        sentences = re.split(r'(?<=[.!?])\s+', text)
+        result = []
+
+        # Words that indicate the sentence already starts with a connector
+        connector_starts = {
+            'however', 'moreover', 'furthermore', 'additionally', 'nevertheless',
+            'consequently', 'therefore', 'hence', 'thus', 'meanwhile',
+            'nonetheless', 'accordingly', 'similarly', 'conversely', 'alternatively',
+            'in', 'on', 'as', 'to', 'by', 'for', 'given', 'that',
+        }
+
+        for i, sent in enumerate(sentences):
+            if not sent.strip():
+                result.append(sent)
+                continue
+
+            first_word = sent.split()[0].lower().rstrip(',') if sent.split() else ''
+
+            if (i > 0 and first_word not in connector_starts and
+                    self.rng.random() < self.aggression * 0.08):
+                marker = self.rng.choice(INDIAN_DISCOURSE_MARKERS)
+                # Capitalize marker and prepend
+                marker_capitalized = marker[0].upper() + marker[1:]
+                # Add comma after marker if not already ending with one
+                if not marker_capitalized.endswith(','):
+                    marker_capitalized += ','
+                sent = f"{marker_capitalized} {sent[0].lower()}{sent[1:]}"
+
+            result.append(sent)
+
+        return ' '.join(result)
+
     def _fix_repeated_starters(self, text):
         """Fix sentences that start with the same word/phrase repeatedly."""
         paragraphs = text.split('\n\n')
@@ -131,6 +272,15 @@ class PostProcessor:
             "Given this, ",
             "As such, ",
             "To clarify, ",
+            "One may observe that ",
+            "It is worth considering that ",
+            "Interestingly, ",
+            "On closer examination, ",
+            "Viewed differently, ",
+            "That said, ",
+            "To be precise, ",
+            "Broadly, ",
+            "In point of fact, ",
         ]
 
         words = sentence.split()
@@ -164,7 +314,7 @@ class PostProcessor:
             semicolons = [m.start() for m in re.finditer(';', text)]
             if semicolons:
                 idx = self.rng.choice(semicolons)
-                replacement = self.rng.choice(['. ', ' - '])
+                replacement = '. '
                 text = text[:idx] + replacement + text[idx + 1:]
                 # Capitalize after period
                 next_char_idx = idx + len(replacement)
@@ -185,12 +335,15 @@ class PostProcessor:
 
         for sent in sentences:
             # Occasionally add a slightly informal connector
-            if (self.rng.random() < self.aggression * 0.1 and
+            if (self.rng.random() < self.aggression * 0.08 and
                     len(sent.split()) > 10):
                 informal_connectors = [
-                    " - and this is key - ",
                     " (though not always) ",
-                    " - in theory at least - ",
+                    " (to some extent) ",
+                    " (admittedly) ",
+                    " (in a sense) ",
+                    " (one might argue) ",
+                    " (to some degree) ",
                 ]
                 words = sent.split()
                 if len(words) > 6:

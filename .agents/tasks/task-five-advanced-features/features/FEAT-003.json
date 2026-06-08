@@ -1,0 +1,33 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Complete UI Overhaul: Rebuild app.py with Streamlit tabs for Humanize mode and Co-Write mode. Add Voice Profile display (before/after), Critic Loop integration with retry visualization, Identity/Role conditioning UI section, Co-Write mode interface, and Revision Feedback Loop with editable output and style preference tracking.",
+  "status": "completed",
+  "steps": [
+    "Restructure app.py to use st.tabs(['Humanize', 'Co-Write']) at the top level to switch between modes. Keep all existing Humanize functionality intact within the first tab.",
+    "Add an Identity/Role conditioning sidebar or expander section (visible in both tabs) where user specifies: Role (selectbox from ACADEMIC_ROLES), Field (selectbox from ACADEMIC_FIELDS), Institution (text_input, optional), Style preference (selectbox: formal, semi-formal, conversational). Store in session state as AcademicIdentity instance. Pass to pipeline and co-writer.",
+    "In the Humanize tab: After output is generated, display a Voice Profile comparison panel showing before/after metrics (hedges count, boosters count, pronoun usage, engagement markers, TTR, idiosyncrasies) using st.columns with metrics or a small table. Use get_voice_profile() on both input and output.",
+    "In the Humanize tab: Integrate the CriticLoop. Add a checkbox 'Enable Auto-Critic' and a slider for risk threshold. When enabled, use CriticLoop instead of direct pipeline.process(). Show which retry attempt succeeded and display the risk score progression (e.g., 'Attempt 1: 62% -> Attempt 2: 38% (passed)').",
+    "Build the Co-Write tab: Input fields for thesis/intent (text_input), target audience (text_input), rough notes (text_area), key arguments (text_area, one per line). A 'Generate' button that calls CoWriter.generate_stream() and displays streaming output. Show voice profile of generated text.",
+    "Implement the Revision Feedback Loop in BOTH tabs: After output is generated, show an editable text_area pre-filled with the output. Add a 'Save Preferences' button. When user edits and saves: (a) compare original output vs edited version, (b) detect patterns in changes (shortening, adding hedges, vocabulary changes) using simple heuristics, (c) store these as style_preferences in st.session_state, (d) on subsequent runs, inject these preferences into the LLM prompt as additional instructions. Track: avg_sentence_length_preference, hedge_preference (more/less/same), formality_direction, vocabulary_notes.",
+    "Ensure all session state is properly initialized (identity, style_preferences, critic_history) and persists across reruns within the same Streamlit session."
+  ],
+  "acceptance_criteria": [
+    "app.py has two tabs: Humanize and Co-Write",
+    "Identity section is present and functional, creates AcademicIdentity from user input",
+    "Voice Profile before/after comparison displays after humanization",
+    "Critic loop can be enabled and shows retry progression",
+    "Co-Write tab has all input fields and generates text via CoWriter",
+    "Revision feedback loop: editable output area, save preferences button, preferences stored in session state",
+    "App starts without errors: streamlit run app.py --server.headless true",
+    "Existing humanize functionality still works (pipeline stages, streaming, download)"
+  ],
+  "verification": [
+    "Run: pip install -r requirements.txt",
+    "Run: timeout 10 streamlit run app.py --server.headless true 2>&1 | head -20 (verify no import errors or crashes on startup)",
+    "Run: python -c \"import app\" to check for syntax errors (may fail due to streamlit but should not have SyntaxError)",
+    "Run: python -c \"from humanizer.voice_analysis import get_voice_profile; from humanizer.critic import CriticLoop; from humanizer.cowrite import CoWriter; from humanizer.identity import AcademicIdentity; print('All imports OK')\""
+  ],
+  "blocked_reason": null,
+  "findings": "App starts cleanly with streamlit run. All imports work. Tabs, identity, voice profile, critic loop, co-write, and revision feedback are all integrated. The revision feedback loop uses simple heuristics to detect sentence length, hedge usage, formality, and vocabulary changes."
+}

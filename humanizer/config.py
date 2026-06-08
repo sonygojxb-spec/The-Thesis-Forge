@@ -78,9 +78,9 @@ INTENSITY_PROFILES = {
 }
 
 # LLM Rewrite stage settings
-LLM_PASS1_TEMPERATURE_BASE = 0.5
-LLM_PASS2_TEMPERATURE_BASE = 0.7
-LLM_TEMPERATURE_INTENSITY_FACTOR = 0.1
+LLM_PASS1_TEMPERATURE_BASE = 0.8
+LLM_PASS2_TEMPERATURE_BASE = 0.9
+LLM_TEMPERATURE_INTENSITY_FACTOR = 0.15
 
 # Protected academic/domain terms that should not be replaced
 PROTECTED_TERMS = {
@@ -105,6 +105,23 @@ AI_TRANSITION_WORDS = [
     "in the realm of", "it is imperative to", "tapestry of",
     "navigating the", "landscape of", "multifaceted",
     "underscores the", "pivotal role", "in essence",
+    "in conclusion", "it is evident that", "plays a crucial role",
+    "it is essential to", "a myriad of", "in today's world",
+    "serves as a", "it is noteworthy", "a comprehensive understanding",
+    "the overarching", "holistic approach", "a nuanced understanding",
+    "leveraging", "spearheading", "at the forefront",
+    "groundbreaking", "cutting-edge", "paradigm shift",
+    "synergy", "ecosystem", "robust framework",
+    "seamless integration", "transformative", "instrumental in",
+    "underpinning", "fostering", "bolstering", "catalyzing",
+    "it is crucial to", "it is worth mentioning",
+    "a key aspect", "plays an important role",
+    "it can be argued that", "a significant impact",
+    "on the other hand", "in other words",
+    "as a matter of fact", "by and large",
+    "at the end of the day", "in a nutshell",
+    "to put it simply", "as previously mentioned",
+    "it goes without saying", "as a consequence",
 ]
 
 # Natural replacements for AI transitions
@@ -123,4 +140,140 @@ TRANSITION_REPLACEMENTS = {
     "delving into": ["looking at", "examining", "exploring", ""],
     "multifaceted": ["complex", "varied", "diverse", ""],
     "in essence": ["basically", "at its core", "put simply", ""],
+    "in conclusion": ["to sum up", "finally", "overall", ""],
+    "it is evident that": ["clearly", "one can see that", "it appears", ""],
+    "plays a crucial role": ["matters greatly", "is key", "is central", ""],
+    "it is essential to": ["one must", "it helps to", "we need to", ""],
+    "a myriad of": ["many", "a range of", "various", "several"],
+    "in today's world": ["now", "currently", "these days", "at present"],
+    "serves as a": ["acts as a", "functions as a", "works as a", "is a"],
+    "it is noteworthy": ["notably", "worth noting", "interestingly", ""],
+    "a comprehensive understanding": ["a full picture", "a clear grasp", "solid knowledge", ""],
+    "the overarching": ["the main", "the broad", "the general", "the central"],
+    "holistic approach": ["broad approach", "complete method", "full view", "integrated method"],
+    "a nuanced understanding": ["a detailed grasp", "a careful reading", "a close look", ""],
+    "leveraging": ["using", "drawing on", "employing", "making use of"],
+    "spearheading": ["leading", "driving", "heading", "championing"],
+    "at the forefront": ["leading", "ahead", "in front", "at the front"],
+    "groundbreaking": ["pioneering", "original", "path-breaking", "novel"],
+    "cutting-edge": ["advanced", "latest", "modern", "state-of-the-art"],
+    "paradigm shift": ["major change", "fundamental shift", "turning point", "sea change"],
+    "synergy": ["cooperation", "collaboration", "combined effect", "partnership"],
+    "ecosystem": ["environment", "system", "network", "setting"],
+    "robust framework": ["solid structure", "strong model", "reliable scheme", "sound basis"],
+    "seamless integration": ["smooth merging", "easy combination", "natural fit", ""],
+    "transformative": ["significant", "major", "far-reaching", "game-changing"],
+    "instrumental in": ["key to", "important for", "central to", "vital for"],
+    "underpinning": ["supporting", "underlying", "behind", "at the base of"],
+    "fostering": ["encouraging", "promoting", "cultivating", "nurturing"],
+    "bolstering": ["strengthening", "supporting", "reinforcing", "boosting"],
+    "catalyzing": ["triggering", "sparking", "driving", "prompting"],
+    "it is crucial to": ["one must", "it matters to", "we should", ""],
+    "it is worth mentioning": ["notably", "it helps to note", "one point is", ""],
+    "a key aspect": ["one part", "an important point", "a main element", ""],
+    "plays an important role": ["matters", "is significant", "contributes", ""],
+    "it can be argued that": ["one might say", "arguably", "perhaps", ""],
+    "a significant impact": ["a real effect", "a strong influence", "a clear bearing", ""],
+    "on the other hand": ["but", "yet", "however", "alternatively"],
+    "in other words": ["that is", "put differently", "meaning", ""],
+    "as a matter of fact": ["in fact", "actually", "indeed", ""],
+    "by and large": ["mostly", "generally", "on the whole", ""],
+    "at the end of the day": ["ultimately", "in the end", "finally", ""],
+    "in a nutshell": ["briefly", "in short", "simply put", ""],
+    "to put it simply": ["simply", "in short", "basically", ""],
+    "as previously mentioned": ["as noted", "as stated", "as discussed", ""],
+    "it goes without saying": ["clearly", "obviously", "naturally", ""],
+    "as a consequence": ["so", "therefore", "as a result", "thus"],
 }
+
+# Critic Loop settings
+CRITIC_DEFAULT_THRESHOLD = 40
+CRITIC_MAX_RETRIES = 3
+
+# Voice Analysis marker lists
+VOICE_HEDGES = [
+    "might", "perhaps", "seems to", "could", "arguably",
+    "it appears", "one might", "possibly", "may", "likely",
+    "it seems", "suggest", "to some extent",
+]
+
+VOICE_BOOSTERS = [
+    "clearly", "definitely", "certainly", "undoubtedly",
+    "obviously", "precisely", "without doubt", "evidently",
+    "unquestionably", "absolutely",
+]
+
+VOICE_ENGAGEMENT_MARKERS = [
+    "one might argue",
+    "alternatively", "some scholars",
+    "it could be contended", "a counter-argument",
+    "from another perspective",
+]
+
+# Academic Identity defaults
+ACADEMIC_ROLES = [
+    "PhD student", "Postdoctoral researcher", "Assistant Professor",
+    "Associate Professor", "Professor", "Research Fellow",
+    "Lecturer", "Graduate student", "Research Scholar",
+]
+
+ACADEMIC_FIELDS = [
+    "Computer Science", "Physics", "Biology", "Chemistry",
+    "Mathematics", "Psychology", "Economics", "Literature",
+    "Engineering", "Medicine", "Sociology", "Philosophy",
+    "Political Science", "Environmental Science", "Linguistics",
+]
+
+STYLE_PREFERENCES = ["formal", "semi-formal", "conversational"]
+
+# Indian English spelling preferences (American -> British)
+INDIAN_ENGLISH_PREFERENCES = {
+    "utilize": "utilise",
+    "utilize": "utilise",
+    "organize": "organise",
+    "recognize": "recognise",
+    "analyze": "analyse",
+    "summarize": "summarise",
+    "maximize": "maximise",
+    "minimize": "minimise",
+    "optimize": "optimise",
+    "emphasize": "emphasise",
+    "standardize": "standardise",
+    "prioritize": "prioritise",
+    "customize": "customise",
+    "categorize": "categorise",
+    "characterize": "characterise",
+    "hypothesize": "hypothesise",
+    "color": "colour",
+    "behavior": "behaviour",
+    "favor": "favour",
+    "honor": "honour",
+    "labor": "labour",
+    "neighbor": "neighbour",
+    "center": "centre",
+    "fiber": "fibre",
+    "meter": "metre",
+    "defense": "defence",
+    "license": "licence",
+    "offense": "offence",
+    "program": "programme",
+    "catalog": "catalogue",
+    "dialog": "dialogue",
+}
+
+# Indian English discourse markers typical in academic writing
+INDIAN_DISCOURSE_MARKERS = [
+    "as such",
+    "in this regard",
+    "to that end",
+    "one may note that",
+    "it is pertinent to mention",
+    "needless to say",
+    "in view of the above",
+    "keeping this in mind",
+    "on the whole",
+    "for the most part",
+    "to a large extent",
+    "in the Indian context",
+    "broadly speaking",
+]

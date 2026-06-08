@@ -57,6 +57,8 @@ class StructuralVariation:
             sentences = self._merge_short_sentences(sentences)
             if HAS_SPACY and self.aggression > 0.4:
                 sentences = self._reorder_clauses(sentences)
+            sentences = self._invert_sentence_order(sentences)
+            sentences = self._inject_rhetorical_questions(sentences)
             processed_paragraphs.append(' '.join(sentences))
 
         # Restructure paragraphs at higher aggression
@@ -77,7 +79,7 @@ class StructuralVariation:
     def _split_long_sentences(self, sentences):
         """Split sentences that are too long at conjunction points."""
         result = []
-        threshold = int(35 - (self.aggression * 10))  # 25-35 words
+        threshold = int(30 - (self.aggression * 10))  # 20-30 words
 
         for sent in sentences:
             words = sent.split()
@@ -161,7 +163,7 @@ class StructuralVariation:
 
         result = []
         for sent in sentences:
-            if self.rng.random() < self.aggression * 0.3 and ',' in sent:
+            if self.rng.random() < self.aggression * 0.6 and ',' in sent:
                 reordered = self._try_reorder(sent)
                 result.append(reordered)
             else:
@@ -199,6 +201,75 @@ class StructuralVariation:
                 break
 
         return sentence
+
+    def _invert_sentence_order(self, sentences):
+        """Occasionally reverse the order of presenting information within a group."""
+        if self.aggression <= 0.5 or len(sentences) < 3:
+            return sentences
+
+        result = list(sentences)
+        # Look at groups of 3-4 sentences and occasionally present conclusion first
+        i = 0
+        while i < len(result) - 2:
+            group_size = min(self.rng.choice([3, 4]), len(result) - i)
+            if self.rng.random() < self.aggression * 0.12:
+                # Move the last sentence of the group to the front
+                group = result[i:i + group_size]
+                last = group[-1]
+                group = [last] + group[:-1]
+                result[i:i + group_size] = group
+                i += group_size
+            else:
+                i += 1
+
+        return result
+
+    def _inject_rhetorical_questions(self, sentences):
+        """Occasionally convert a statement into a rhetorical question form."""
+        result = []
+        for i, sent in enumerate(sentences):
+            words = sent.split()
+            if (len(words) > 15 and self.rng.random() < self.aggression * 0.1):
+                # Try to convert to rhetorical question
+                question = self._to_rhetorical_question(sent)
+                if question:
+                    result.append(question)
+                    result.append(sent)
+                    continue
+            result.append(sent)
+        return result
+
+    def _to_rhetorical_question(self, sentence):
+        """Convert a statement into a rhetorical question."""
+        sent_lower = sentence.lower().strip()
+        # Pattern: "X is important/significant/crucial"
+        match = re.match(r'^(.+?)\s+(?:is|are)\s+(?:important|significant|crucial|essential|vital|necessary)',
+                         sent_lower)
+        if match:
+            subject = match.group(1).strip()
+            # Remove leading articles for the question
+            subject = re.sub(r'^(?:the|this|these|a|an)\s+', '', subject)
+            return f"Why is {subject} important?"
+
+        # Pattern: general statement - ask "But why does this matter?"
+        if len(sentence.split()) > 18:
+            questions = [
+                "But why does this matter?",
+                "What makes this significant?",
+                "Why is this relevant?",
+                "How does one account for this?",
+                "What explains this pattern?",
+                "Is this not precisely the point?",
+                "Can this be coincidental?",
+                "Does the evidence not suggest otherwise?",
+                "What does one make of this?",
+                "How might this be explained?",
+                "Why should this surprise anyone?",
+                "Does this not warrant attention?",
+            ]
+            return self.rng.choice(questions)
+
+        return None
 
     def _restructure_paragraphs(self, paragraphs):
         """Vary paragraph lengths by occasionally splitting or merging."""
