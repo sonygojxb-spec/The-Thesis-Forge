@@ -1,0 +1,10 @@
+# Development and testing dependencies for Ultimate Humanizer
+-r requirements.txt
+
+# Testing framework
+hypothesis>=6.0
+pytest>=7.0
+pytest-timeout>=2.0
+
+# Optional: faster vector similarity search for retrieval optimizations
+faiss-cpu

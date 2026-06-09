@@ -1,0 +1,42 @@
+[
+  {
+    "id": "pd-001",
+    "text": "The process of natural selection acts upon heritable variation within populations, favoring traits that enhance survival and reproductive success in a given environment. Over successive generations, this mechanism drives adaptation and the diversification of species.",
+    "source": "Public domain - based on Darwin's On the Origin of Species (1859)"
+  },
+  {
+    "id": "pd-002",
+    "text": "Empirical observation suggests that the rate of chemical reactions increases with temperature, a relationship quantified by the Arrhenius equation. The activation energy represents the minimum energy threshold that reactant molecules must overcome for a transformation to proceed.",
+    "source": "Public domain - based on Arrhenius (1889) foundational chemistry"
+  },
+  {
+    "id": "pd-003",
+    "text": "The scientific method relies upon the formulation of hypotheses that are testable through controlled experimentation. Reproducibility of results across independent investigations strengthens the validity of conclusions drawn from empirical data.",
+    "source": "Public domain - general scientific methodology principles"
+  },
+  {
+    "id": "pd-004",
+    "text": "Statistical analysis of variance allows researchers to determine whether observed differences between group means are likely attributable to the experimental treatment or merely to random sampling variation. The F-ratio provides a standardized measure of this distinction.",
+    "source": "Public domain - based on Fisher's statistical methods (1925)"
+  },
+  {
+    "id": "pd-005",
+    "text": "In thermodynamic systems, entropy tends to increase over time in isolated conditions, reflecting the natural progression toward states of greater disorder. This principle constrains the direction of spontaneous processes and establishes fundamental limits on energy conversion efficiency.",
+    "source": "Public domain - based on Clausius and Boltzmann thermodynamics"
+  },
+  {
+    "id": "pd-006",
+    "text": "The structure of crystalline solids exhibits long-range periodicity, with atoms arranged in repeating patterns described by unit cells and space groups. Defects in this ordered arrangement profoundly influence the mechanical, electrical, and optical properties of materials.",
+    "source": "Public domain - based on Bragg's crystallography work (1913)"
+  },
+  {
+    "id": "pd-007",
+    "text": "Cognitive development in children proceeds through qualitatively distinct stages, each characterized by particular modes of reasoning and understanding. The transition between stages reflects the progressive construction of increasingly sophisticated mental frameworks for interpreting experience.",
+    "source": "Public domain - based on Piaget's developmental theory (1936)"
+  },
+  {
+    "id": "pd-008",
+    "text": "Economic equilibrium occurs when the quantity of a good demanded by consumers equals the quantity supplied by producers at a given price level. Deviations from this balance generate market pressures that tend to restore equilibrium through price adjustments over time.",
+    "source": "Public domain - based on Marshall's Principles of Economics (1890)"
+  }
+]

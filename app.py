@@ -12,6 +12,8 @@ from humanizer.voice_analysis import get_voice_profile
 from humanizer.critic import CriticLoop
 from humanizer.identity import AcademicIdentity
 from humanizer.cowrite import CoWriter
+from humanizer.classifier import detection_risk_score
+from humanizer.config_serializer import ConfigSerializer, PipelineConfig, ConfigError
 
 # --- Page Config ---
 st.set_page_config(
@@ -31,6 +33,10 @@ if "humanized_output" not in st.session_state:
     st.session_state.humanized_output = ""
 if "cowrite_output" not in st.session_state:
     st.session_state.cowrite_output = ""
+if "final_similarity" not in st.session_state:
+    st.session_state.final_similarity = None
+if "original_input_text" not in st.session_state:
+    st.session_state.original_input_text = ""
 
 # --- Custom CSS ---
 st.markdown("""
@@ -410,6 +416,8 @@ with tab_humanize:
         )
         profile = INTENSITY_PROFILES[rewrite_intensity]
 
+        # --- Existing five stages ---
+        st.markdown("**Original Stages**")
         adv_c1, adv_c2, adv_c3, adv_c4, adv_c5 = st.columns(5)
         with adv_c1:
             enable_structural = st.checkbox(
@@ -446,6 +454,159 @@ with tab_humanize:
                 help="Remove AI fingerprints, inject natural imperfections.",
                 key="stage_postprocess"
             )
+
+        # --- Nine new capability stages ---
+        st.markdown("**Advanced Capabilities**")
+        new_c1, new_c2, new_c3 = st.columns(3)
+        with new_c1:
+            enable_semantic_transform = st.checkbox(
+                "Semantic Transformation",
+                value=profile.get("semantic_transform_enabled", False),
+                help="Surface-form transforms with strict 0.90 similarity gate.",
+                key="stage_semantic_transform"
+            )
+            enable_iterative_paraphrase = st.checkbox(
+                "Iterative Paraphrasing",
+                value=profile.get("iterative_paraphrase_enabled", False),
+                help="Multi-pass LLM paraphrasing for progressive divergence.",
+                key="stage_iterative_paraphrase"
+            )
+            enable_retrieval_augmented = st.checkbox(
+                "Retrieval-Augmented Rewriting",
+                value=profile.get("retrieval_augmented_enabled", False),
+                help="Ground rewrites in human-written reference passages.",
+                key="stage_retrieval_augmented"
+            )
+        with new_c2:
+            enable_stylometric = st.checkbox(
+                "Stylometric Obfuscation",
+                value=profile.get("stylometric_enabled", False),
+                help="Disrupt stylometric fingerprints (sentence length, function words, TTR).",
+                key="stage_stylometric"
+            )
+            enable_perplexity_optimize = st.checkbox(
+                "Perplexity Optimization",
+                value=profile.get("perplexity_optimize_enabled", False),
+                help="Tune text toward a target perplexity and burstiness profile.",
+                key="stage_perplexity_optimize"
+            )
+            enable_adversarial = st.checkbox(
+                "Adversarial Rewriting",
+                value=profile.get("adversarial_enabled", False),
+                help="Rewrite text to specifically evade detector signals.",
+                key="stage_adversarial"
+            )
+        with new_c3:
+            enable_error_injection = st.checkbox(
+                "Error Injection",
+                value=profile.get("error_injection_enabled", False),
+                help="Inject controlled human-like imperfections (punctuation, whitespace).",
+                key="stage_error_injection"
+            )
+            enable_detector_optimize = st.checkbox(
+                "Detector Optimization",
+                value=profile.get("detector_optimize_enabled", False),
+                help="Closed-loop optimization to minimize detection probability.",
+                key="stage_detector_optimize"
+            )
+            enable_classifier = st.checkbox(
+                "AI Classifier",
+                value=profile.get("classifier_enabled", False),
+                help="Use transformer-based classifier for risk scoring (enables detector stages).",
+                key="stage_classifier"
+            )
+
+        # --- Target Perplexity Profile ---
+        st.markdown("**Target Perplexity Profile**")
+        ppx_c1, ppx_c2 = st.columns(2)
+        with ppx_c1:
+            target_perplexity_mean = st.number_input(
+                "Target Perplexity Mean",
+                min_value=1.0,
+                value=float(profile.get("target_perplexity_mean", 60.0)),
+                step=5.0,
+                help="Target mean perplexity for human-like text (typical: 50-80).",
+                key="target_perplexity_mean"
+            )
+        with ppx_c2:
+            target_perplexity_variance = st.number_input(
+                "Target Perplexity Variance",
+                min_value=0.0,
+                value=float(profile.get("target_perplexity_variance", 15.0)),
+                step=1.0,
+                help="Target cross-sentence perplexity variance (typical: 10-25).",
+                key="target_perplexity_variance"
+            )
+
+    # Configuration Save/Load
+    with st.expander("Configuration Save/Load"):
+        cfg_c1, cfg_c2 = st.columns(2)
+
+        with cfg_c1:
+            st.markdown("**Save Configuration**")
+            # Build PipelineConfig from the current UI state
+            _current_profile = INTENSITY_PROFILES[rewrite_intensity]
+            _current_config = PipelineConfig(
+                intensity=rewrite_intensity,
+                semantic_transform_enabled=enable_semantic_transform,
+                iterative_paraphrase_enabled=enable_iterative_paraphrase,
+                retrieval_augmented_enabled=enable_retrieval_augmented,
+                stylometric_enabled=enable_stylometric,
+                perplexity_optimize_enabled=enable_perplexity_optimize,
+                adversarial_enabled=enable_adversarial,
+                error_injection_enabled=enable_error_injection,
+                detector_optimize_enabled=enable_detector_optimize,
+                classifier_enabled=enable_classifier,
+                semantic_transform_aggression=float(_current_profile.get("semantic_transform_aggression", 0.0)),
+                iterative_paraphrase_aggression=float(_current_profile.get("iterative_paraphrase_aggression", 0.0)),
+                retrieval_augmented_aggression=float(_current_profile.get("retrieval_augmented_aggression", 0.0)),
+                stylometric_aggression=float(_current_profile.get("stylometric_aggression", 0.0)),
+                perplexity_optimize_aggression=float(_current_profile.get("perplexity_optimize_aggression", 0.0)),
+                adversarial_aggression=float(_current_profile.get("adversarial_aggression", 0.0)),
+                error_injection_aggression=float(_current_profile.get("error_injection_aggression", 0.0)),
+                detector_optimize_aggression=float(_current_profile.get("detector_optimize_aggression", 0.0)),
+                target_perplexity_mean=target_perplexity_mean,
+                target_perplexity_variance=target_perplexity_variance,
+            )
+            _config_json = ConfigSerializer.serialize(_current_config)
+            st.download_button(
+                label="Save Config",
+                data=_config_json,
+                file_name="pipeline_config.json",
+                mime="application/json",
+                use_container_width=True,
+                key="config_save_btn"
+            )
+
+        with cfg_c2:
+            st.markdown("**Load Configuration**")
+            uploaded_config = st.file_uploader(
+                "Upload config JSON",
+                type=["json"],
+                key="config_upload",
+                label_visibility="collapsed",
+            )
+            if uploaded_config is not None:
+                try:
+                    config_blob = uploaded_config.read().decode("utf-8")
+                    loaded_config = ConfigSerializer.deserialize(config_blob)
+                    # Update session state with loaded values
+                    st.session_state["humanize_intensity"] = loaded_config.intensity
+                    st.session_state["stage_semantic_transform"] = loaded_config.semantic_transform_enabled
+                    st.session_state["stage_iterative_paraphrase"] = loaded_config.iterative_paraphrase_enabled
+                    st.session_state["stage_retrieval_augmented"] = loaded_config.retrieval_augmented_enabled
+                    st.session_state["stage_stylometric"] = loaded_config.stylometric_enabled
+                    st.session_state["stage_perplexity_optimize"] = loaded_config.perplexity_optimize_enabled
+                    st.session_state["stage_adversarial"] = loaded_config.adversarial_enabled
+                    st.session_state["stage_error_injection"] = loaded_config.error_injection_enabled
+                    st.session_state["stage_detector_optimize"] = loaded_config.detector_optimize_enabled
+                    st.session_state["stage_classifier"] = loaded_config.classifier_enabled
+                    st.session_state["target_perplexity_mean"] = loaded_config.target_perplexity_mean
+                    st.session_state["target_perplexity_variance"] = loaded_config.target_perplexity_variance
+                    st.success("Configuration loaded successfully!")
+                    st.rerun()
+                except ConfigError as e:
+                    st.error(f"Invalid field: {e.field}")
 
     # Critic Loop Settings
     with st.expander("Critic Loop Settings"):
@@ -507,6 +668,21 @@ with tab_humanize:
                     "llm_rewrite": enable_llm,
                     "perplexity": enable_perplexity,
                     "postprocess": enable_postprocess,
+                    "semantic_transform": enable_semantic_transform,
+                    "iterative_paraphrase": enable_iterative_paraphrase,
+                    "retrieval_augmented": enable_retrieval_augmented,
+                    "stylometric": enable_stylometric,
+                    "perplexity_optimize": enable_perplexity_optimize,
+                    "adversarial": enable_adversarial,
+                    "error_injection": enable_error_injection,
+                    "detector_optimize": enable_detector_optimize,
+                    "classifier": enable_classifier,
+                }
+
+                # Build target perplexity profile overrides
+                target_profile_overrides = {
+                    "target_perplexity_mean": target_perplexity_mean,
+                    "target_perplexity_variance": target_perplexity_variance,
                 }
 
                 # Get identity and style preferences
@@ -524,6 +700,7 @@ with tab_humanize:
                             stage_overrides=stage_overrides,
                             identity=identity,
                             style_instructions=style_instructions,
+                            target_perplexity_profile=target_profile_overrides,
                         )
 
                     critic = CriticLoop(
@@ -538,6 +715,12 @@ with tab_humanize:
                     final_text = result["final_text"]
                     st.session_state.humanized_output = final_text
                     st.session_state.critic_history = result["attempts"]
+                    st.session_state.original_input_text = input_text
+                    # Critic loop doesn't expose final_similarity directly;
+                    # compute it using the similarity evaluator
+                    from humanizer.similarity import SimilarityEvaluator
+                    _sim_eval = SimilarityEvaluator()
+                    st.session_state.final_similarity = _sim_eval.score(input_text, final_text)
 
                     # Display attempt progression
                     st.markdown("**Critic Loop Results:**")
@@ -592,6 +775,7 @@ with tab_humanize:
                         progress_callback=update_progress,
                         identity=identity,
                         style_instructions=style_instructions,
+                        target_perplexity_profile=target_profile_overrides,
                     )
 
                     stream_container = st.empty()
@@ -628,7 +812,13 @@ with tab_humanize:
                         st.error(f"An error occurred: {str(e)}")
                         final_text = ""
 
-                    st.session_state.humanized_output = final_text
+                    # Only update session state if the run produced output;
+                    # on error (final_text empty), retain the last successful
+                    # output and analytics so the UI keeps showing them (Req 12.7).
+                    if final_text:
+                        st.session_state.humanized_output = final_text
+                        st.session_state.final_similarity = pipeline.final_similarity
+                        st.session_state.original_input_text = input_text
 
                 # Post-output display (metrics, voice profile, download, feedback)
                 if st.session_state.humanized_output:
@@ -651,6 +841,46 @@ with tab_humanize:
                         delta=f"-{risk_delta}%" if risk_delta and risk_delta > 0 else None,
                         delta_color="normal",
                         help="Internal estimate only - not a guarantee of detection results."
+                    )
+
+                    # --- Before/After Detection Risk & Similarity Analytics ---
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    st.markdown("#### Detection & Similarity Analytics")
+
+                    original_for_scoring = st.session_state.original_input_text or input_text
+                    before_score, before_source = detection_risk_score(original_for_scoring, classifier=None)
+                    after_score, after_source = detection_risk_score(final_text, classifier=None)
+
+                    ana_c1, ana_c2, ana_c3 = st.columns(3)
+                    with ana_c1:
+                        st.metric(
+                            "Detection Risk (Before)",
+                            f"{before_score:.0f} / 100",
+                            help=f"Scored via {before_source}"
+                        )
+                    with ana_c2:
+                        score_change = after_score - before_score
+                        st.metric(
+                            "Detection Risk (After)",
+                            f"{after_score:.0f} / 100",
+                            delta=f"{score_change:+.0f}",
+                            delta_color="inverse",
+                            help=f"Scored via {after_source}"
+                        )
+                    with ana_c3:
+                        similarity_val = st.session_state.final_similarity
+                        if similarity_val is not None:
+                            st.metric(
+                                "Semantic Similarity",
+                                f"{similarity_val:.3f}",
+                                help="Cosine similarity between original and final text (0.0-1.0)"
+                            )
+                        else:
+                            st.metric("Semantic Similarity", "N/A")
+
+                    st.caption(
+                        "Scores are estimates based on heuristic analysis and may not "
+                        "match specific AI detection tools."
                     )
 
                     st.markdown("<br>", unsafe_allow_html=True)

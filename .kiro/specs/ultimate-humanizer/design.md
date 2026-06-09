@@ -62,6 +62,35 @@ These add three new dependency groups (embeddings, transformer classifier, optio
 all of which degrade gracefully if unavailable (see Error Handling). The existing heuristics in
 `text_analysis.py` remain the fallback for both similarity-free risk scoring and classifier outages.
 
+### Alignment with the Current Codebase
+
+The design is anchored to the code that exists today so implementers can extend rather than rewrite:
+
+- **Existing stage contract** (`stage_structural.py`, `stage_lexical.py`, `stage_perplexity.py`,
+  `stage_postprocess.py`): `__init__(aggression: float, seed: Optional[int], ...)` +
+  `process(text: str) -> str`. Every new NLP stage matches this exactly.
+- **Existing LLM contract** (`stage_llm_rewrite.py`): `LLMRewriter` takes
+  `aggression, model, api_key, base_url, identity, style_instructions` and exposes a streaming SSE
+  helper `_llm_pass_stream`. New LLM-backed stages reuse this HTTP/SSE shape. **Note:** the existing
+  `_llm_pass_stream` (and `cowrite.py`) hard-code `requests.post(..., timeout=60)`; the new LLM-backed
+  stages require a **30-second** per-call/per-pass timeout (Req 1.9, 4.7), so the timeout MUST be a
+  constructor parameter (default 30s) rather than the literal 60s reused verbatim.
+- **Existing analytics helpers** (`text_analysis.py`): `compute_sentence_length_variance`,
+  `compute_type_token_ratio`, `estimate_perplexity_score`, and `compute_ai_risk_score` already exist
+  and are reused as-is — `compute_ai_risk_score` (a 0-100 weighted blend of sentence-length variance,
+  transition-word density, type-token ratio, and perplexity uniformity) is the heuristic Risk_Scorer
+  fallback for the Classifier.
+- **Existing iterative controller** (`critic.py`): `CriticLoop` already re-runs the whole pipeline at
+  escalating intensity, tracking the lowest-`compute_ai_risk_score` attempt and refining the best
+  output each pass. The new `DetectorOptimizer` is the **intra-pipeline successor** of this idea: it
+  closes the loop over a single stage's transformations using the Classifier and a similarity floor
+  rather than re-running the entire pipeline at higher intensity. `CriticLoop` remains usable as an
+  outer wrapper; `DetectorOptimizer` adds the inner, similarity-gated loop.
+- **Existing orchestrator** (`pipeline.py`): today `STAGE_NAMES` is a dict and
+  `get_enabled_stages()` filters a **hard-coded** five-element list; there is no `STAGE_ORDER` yet.
+  This design introduces an explicit ordered `STAGE_ORDER` constant (see Architecture) and extends
+  `STAGE_NAMES`/`INTENSITY_PROFILES` with the nine new keys.
+
 ## Architecture
 
 ### Component View
@@ -145,9 +174,10 @@ rationale:
 13. **Detector_Optimizer** — closed-loop optimization over the *already-humanized* text; runs last so
     it optimizes the true final form.
 
-The orchestrator stores this order in an extended `STAGE_NAMES` / `STAGE_ORDER` structure. Disabled
-stages (via `Stage_Toggle` or `Intensity_Profile`) are simply skipped, but the relative order of the
-remaining stages is invariant (Req 10.1, 10.2, 10.3).
+The orchestrator stores this order in a new explicit `STAGE_ORDER` list (the current code instead
+filters a hard-coded five-element list inside `get_enabled_stages()`), and extends the `STAGE_NAMES`
+dict with the nine new keys. Disabled stages (via `Stage_Toggle` or `Intensity_Profile`) are simply
+skipped, but the relative order of the remaining stages is invariant (Req 10.1, 10.2, 10.3).
 
 ### Per-Stage Discard-on-Violation Wrapper (Req 10.7, 14)
 
@@ -217,7 +247,11 @@ iteration and returns the best valid candidate so far plus an error indication (
 ## Components and Interfaces
 
 All new transformation stages follow the existing contract. LLM-backed stages additionally accept
-`model`, `api_key`, and `base_url` and reuse the `LLMRewriter` HTTP/SSE/`timeout` pattern.
+`model`, `api_key`, and `base_url` and reuse the `LLMRewriter` HTTP/SSE pattern. They take a
+`timeout_s` parameter defaulting to **30** seconds (Req 1.9, 4.7); this is a deliberate change from
+the existing `LLMRewriter._llm_pass_stream`/`CoWriter`, which hard-code a 60-second `requests`
+timeout. The shared SSE helper should be refactored to accept the timeout as an argument so all
+LLM-backed stages share one streaming implementation.
 
 ### Shared: `StageResult` and the evaluation helpers
 
@@ -437,6 +471,12 @@ class DetectorOptimizer:
   failure mid-loop, stops, returns best valid candidate (or input), and surfaces an error (Req 8.8).
 - Candidate generation reuses `AdversarialRewriter`/`IterativeParaphraser` with
   `seed = base_seed + iteration` for varied-but-reproducible candidates.
+- **Relationship to `CriticLoop`**: the existing `CriticLoop` (`critic.py`) is the outer-loop
+  predecessor — it re-runs the *entire* pipeline at escalating intensity and keeps the lowest
+  `compute_ai_risk_score` attempt. `DetectorOptimizer` is the inner, single-stage loop that adds two
+  things `CriticLoop` lacks: it scores with the transformer `Classifier` (not just the heuristic) and
+  it enforces the 0.85 similarity floor on every candidate. The two compose: `CriticLoop` can still
+  wrap a pipeline whose final stage is the `DetectorOptimizer`.
 
 ### `ConfigSerializer` (Req 13)
 
