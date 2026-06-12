@@ -124,6 +124,10 @@ BASE_URL = "https://api.freemodel.dev"
 ```bash
 streamlit run app.py
 ```
+```bash
+python -m streamlit run app.py
+```
+
 
 ### Frontend Features
 
